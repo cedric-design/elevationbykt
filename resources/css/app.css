@@ -59,6 +59,13 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Palette Ivoire — chaleur africaine, luxe */
+    --color-sand: #f1e6d3;
+    --color-cocoa: #2c2117;
+    --color-emerald: #1f6b52;
+    --color-terracotta: #c96f42;
+    --color-honey: #c79a4b;
 }
 
 :root {
@@ -215,6 +222,92 @@ html {
     }
 }
 
+/* ---------- Ivoire : chaleur africaine, luxe ---------- */
+.tpl-ivoire {
+    color-scheme: light;
+    background: #f1e6d3;
+    color: #2c2117;
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+}
+
+.tpl-ivoire ::selection {
+    background: #1f6b52;
+    color: #f1e6d3;
+}
+
+.ivoire-serif {
+    font-family: 'Marcellus', Georgia, serif;
+}
+
+.ivoire-paper {
+    background:
+        url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30Z' fill='none' stroke='%232c2117' stroke-width='0.3' opacity='0.06'/%3E%3C/svg%3E"),
+        radial-gradient(60% 50% at 80% 0%, rgba(201, 111, 66, 0.12), transparent 60%),
+        radial-gradient(50% 40% at 0% 100%, rgba(31, 107, 82, 0.12), transparent 60%), #f1e6d3;
+}
+
+.ivoire-arch {
+    border-radius: 999px 999px 24px 24px;
+}
+
+.ivoire-halo {
+    position: absolute;
+    inset: -20%;
+    border-radius: 50%;
+    border: 1px solid rgba(201, 111, 66, 0.25);
+    animation: ivoire-spin 24s linear infinite;
+}
+
+.ivoire-halo::after {
+    content: '';
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    border: 1px dashed rgba(31, 107, 82, 0.2);
+    animation: ivoire-spin 18s linear infinite reverse;
+}
+
+.ivoire-warm-glow {
+    box-shadow:
+        0 20px 60px -25px rgba(201, 111, 66, 0.35),
+        0 0 0 1px rgba(44, 33, 23, 0.06);
+}
+
+.ivoire-card-hover {
+    transition:
+        transform 0.5s cubic-bezier(0.34, 1.2, 0.4, 1),
+        box-shadow 0.5s ease;
+}
+
+.ivoire-card-hover:hover {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 28px 50px -20px rgba(31, 107, 82, 0.25);
+}
+
+.elevation-logo-spin {
+    animation: elevation-logo-rotate 10s linear infinite;
+}
+
+@keyframes ivoire-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes elevation-logo-rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;
@@ -223,7 +316,10 @@ html {
     .elevation-film,
     .animate-rise,
     .animate-float,
-    .testimonial-track {
+    .testimonial-track,
+    .ivoire-halo,
+    .ivoire-halo::after,
+    .elevation-logo-spin {
         animation: none;
     }
 }
