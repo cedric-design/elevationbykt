@@ -20,7 +20,7 @@ class CollaboratorController extends Controller
         return Inertia::render('admin/collaborators', [
             'collaborators' => User::where('role', UserRole::Administrateur->value)
                 ->latest()
-                ->get(['id', 'name', 'email', 'phone', 'created_at', 'email_verified_at', 'invitation_sent_at']),
+                ->get(['id', 'name', 'email', 'phone', 'created_at', 'email_verified_at', 'invitation_sent_at', 'is_active']),
         ]);
     }
 
@@ -70,6 +70,25 @@ class CollaboratorController extends Controller
         Mail::to($user->email)->send(new CollaboratorInvitation($user, $invitationUrl));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Invitation renvoyée à ' . $user->email]);
+
+        return back();
+    }
+
+    public function toggleActive(User $user): RedirectResponse
+    {
+        if (!$user->isAdmin()) {
+            abort(403);
+        }
+
+        if ($user->id === auth()->id()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => 'Vous ne pouvez pas vous désactiver vous-même.']);
+            return back();
+        }
+
+        $user->update(['is_active' => !$user->is_active]);
+
+        $status = $user->is_active ? 'activé' : 'désactivé';
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Collaborateur {$status}."]);
 
         return back();
     }

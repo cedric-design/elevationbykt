@@ -49,6 +49,7 @@ interface PageProps {
     testimonials: Testimonial[];
     contents: Content[];
     categories: Category[];
+    currentContent?: Content | null;
     isAuthenticated: boolean;
     isAdmin: boolean;
     [key: string]: unknown;
@@ -58,12 +59,14 @@ const AppContext = createContext<{
     testimonials: Testimonial[]; 
     contents: Content[];
     categories: Category[];
+    currentContent?: Content | null;
     isAuthenticated: boolean; 
     isAdmin: boolean;
 }>({
     testimonials: [],
     contents: [],
     categories: [],
+    currentContent: null,
     isAuthenticated: false,
     isAdmin: false,
 });
@@ -484,17 +487,19 @@ function ContentCard({ content, index }: { content: Content; index: number }) {
                     {content.description && (
                         <p className="mt-2 flex-1 line-clamp-2 text-sm leading-relaxed text-cocoa/70">{content.description}</p>
                     )}
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`mt-4 rounded-full py-2.5 text-sm font-medium transition ${
-                            content.type === 'paid'
-                                ? 'bg-honey text-cocoa hover:bg-honey/80'
-                                : 'border border-emerald/40 text-emerald hover:bg-emerald hover:text-sand'
-                        }`}
-                    >
-                        {content.type === 'paid' ? 'Acheter' : 'Voir le contenu'}
-                    </motion.button>
+                    <Link to={`/contenus/${content.slug}`}>
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`mt-4 w-full rounded-full py-2.5 text-sm font-medium transition ${
+                                content.type === 'paid'
+                                    ? 'bg-honey text-cocoa hover:bg-honey/80'
+                                    : 'border border-emerald/40 text-emerald hover:bg-emerald hover:text-sand'
+                            }`}
+                        >
+                            {content.type === 'paid' ? 'Acheter' : 'Voir le contenu'}
+                        </motion.button>
+                    </Link>
                 </div>
             </motion.article>
         </Reveal>
@@ -721,7 +726,45 @@ function Testimonials() {
 }
 
 function Newsletter() {
-    const [sent, setSent] = useState(false);
+    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState(false);
+
+    const subscribe = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage('');
+        setError(false);
+
+        try {
+            const res = await fetch('/newsletter/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] || ''),
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setMessage(data.message);
+                setEmail('');
+            } else {
+                setError(true);
+                setMessage(data.message || 'Une erreur est survenue.');
+            }
+        } catch {
+            setError(true);
+            setMessage('Erreur de connexion.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <section className="mx-auto max-w-6xl px-6 py-20">
             <Reveal>
@@ -744,33 +787,33 @@ function Newsletter() {
                                 Conseils, coulisses, nouvelles masterclass et rendez-vous de la communauté — directement dans ta boîte mail.
                             </p>
                         </div>
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                setSent(true);
-                                e.currentTarget.reset();
-                            }}
-                            className="w-full"
-                        >
+                        <form onSubmit={subscribe} className="w-full">
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <input
                                     required
                                     type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
                                     placeholder="Votre e-mail"
                                     className="w-full rounded-full border border-white/25 bg-white/10 px-5 py-3.5 text-sand placeholder:text-sand/60 outline-none transition focus:border-honey focus:bg-white/15"
                                 />
                                 <motion.button
-                                    whileHover={{ scale: 1.03 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    className="shrink-0 rounded-full bg-honey px-7 py-3.5 font-medium text-cocoa transition hover:bg-sand"
+                                    whileHover={!loading ? { scale: 1.03 } : undefined}
+                                    whileTap={!loading ? { scale: 0.97 } : undefined}
+                                    disabled={loading}
+                                    className="shrink-0 rounded-full bg-honey px-7 py-3.5 font-medium text-cocoa transition hover:bg-sand disabled:opacity-70"
                                 >
-                                    S'inscrire
+                                    {loading ? '...' : "S'inscrire"}
                                 </motion.button>
                             </div>
                             <AnimatePresence>
-                                {sent && (
-                                    <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 text-sm text-honey">
-                                        Merci ! Inscription confirmée (démonstration).
+                                {message && (
+                                    <motion.p
+                                        initial={{ opacity: 0, y: 8 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`mt-3 text-sm ${error ? 'text-terracotta' : 'text-honey'}`}
+                                    >
+                                        {message}
                                     </motion.p>
                                 )}
                             </AnimatePresence>
@@ -1172,6 +1215,155 @@ function Contenus() {
                             </Magnetic>
                         </div>
                     </motion.div>
+                </Reveal>
+            </div>
+        </Page>
+    );
+}
+
+function ContentDetail() {
+    const { contents, isAuthenticated } = useContext(AppContext);
+    const slug = window.location.pathname.split('/').pop();
+    const content = contents.find(c => c.slug === slug);
+
+    if (!content) {
+        return (
+            <Page>
+                <div className="mx-auto max-w-4xl px-6 pt-32 text-center">
+                    <h1 className="ivoire-serif text-4xl text-cocoa">Contenu introuvable</h1>
+                    <p className="mt-4 text-cocoa/70">Ce contenu n'existe pas ou a été supprimé.</p>
+                    <Link to="/contenus" className="mt-6 inline-block rounded-full bg-emerald px-6 py-3 text-sand">
+                        Voir tous les contenus
+                    </Link>
+                </div>
+            </Page>
+        );
+    }
+
+    const isPaid = content.type === 'paid';
+
+    return (
+        <Page>
+            <div className="mx-auto max-w-5xl px-6 pt-32">
+                <Reveal>
+                    <Link to="/contenus" className="mb-6 inline-flex items-center gap-2 text-sm text-cocoa/60 hover:text-emerald">
+                        ← Retour aux contenus
+                    </Link>
+                </Reveal>
+
+                <div className="grid gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+                    {/* Média */}
+                    <Reveal>
+                        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald/20 via-honey/10 to-terracotta/20">
+                            {isPaid ? (
+                                <div className="relative aspect-video">
+                                    {content.cover_image ? (
+                                        <img src={content.cover_image} alt={content.title} className="h-full w-full object-cover" />
+                                    ) : (
+                                        <div className="h-full w-full" />
+                                    )}
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-cocoa/60 backdrop-blur-sm">
+                                        <span className="mb-4 grid h-20 w-20 place-items-center rounded-full bg-honey text-3xl text-cocoa">🔒</span>
+                                        <p className="ivoire-serif text-2xl text-sand">Contenu payant</p>
+                                        <p className="mt-2 text-sand/80">Débloque l'accès complet pour découvrir ce contenu.</p>
+                                    </div>
+                                </div>
+                            ) : content.video_url ? (
+                                <video
+                                    src={content.video_url}
+                                    controls
+                                    className="aspect-video w-full"
+                                    poster={content.cover_image || undefined}
+                                />
+                            ) : content.cover_image ? (
+                                <img src={content.cover_image} alt={content.title} className="aspect-video w-full object-cover" />
+                            ) : (
+                                <div className="aspect-video grid place-items-center">
+                                    <span className="text-6xl text-cocoa/30">📽</span>
+                                </div>
+                            )}
+                        </div>
+                    </Reveal>
+
+                    {/* Info */}
+                    <div>
+                        <Reveal delay={0.1}>
+                            {content.category && (
+                                <span className="text-xs uppercase tracking-widest text-cocoa/50">{content.category.name}</span>
+                            )}
+                            <h1 className="ivoire-serif mt-2 text-4xl text-cocoa lg:text-5xl">{content.title}</h1>
+
+                            <div className="mt-4 flex items-center gap-3">
+                                <span className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+                                    isPaid ? 'bg-honey/20 text-honey' : 'bg-emerald/15 text-emerald'
+                                }`}>
+                                    {isPaid ? `${content.price.toLocaleString()} ${content.currency}` : 'Gratuit'}
+                                </span>
+                                {content.is_featured && (
+                                    <span className="rounded-full bg-terracotta/15 px-4 py-1.5 text-sm font-medium text-terracotta">
+                                        ★ En vedette
+                                    </span>
+                                )}
+                            </div>
+                        </Reveal>
+
+                        {content.description && (
+                            <Reveal delay={0.2}>
+                                <div className="mt-8">
+                                    <h3 className="text-sm font-semibold uppercase tracking-wider text-cocoa/60">Description</h3>
+                                    <p className="mt-3 whitespace-pre-line text-lg leading-relaxed text-cocoa/80">
+                                        {content.description}
+                                    </p>
+                                </div>
+                            </Reveal>
+                        )}
+
+                        <Reveal delay={0.3}>
+                            <div className="mt-10">
+                                {isPaid ? (
+                                    <div className="space-y-4">
+                                        <motion.a
+                                            href={content.skool_link || '#'}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="flex w-full items-center justify-center gap-2 rounded-full bg-honey py-4 text-lg font-medium text-cocoa shadow-lg shadow-honey/30 transition hover:bg-honey/90"
+                                        >
+                                            Acheter — {content.price.toLocaleString()} {content.currency}
+                                        </motion.a>
+                                        <p className="text-center text-xs text-cocoa/50">
+                                            Paiement sécurisé · Accès immédiat après achat
+                                        </p>
+                                    </div>
+                                ) : (
+                                    !isAuthenticated && (
+                                        <div className="rounded-2xl border border-cocoa/10 bg-white/50 p-6 text-center">
+                                            <p className="text-cocoa/70">Connecte-toi pour sauvegarder ta progression.</p>
+                                            <Link
+                                                to="/connexion"
+                                                className="mt-4 inline-block rounded-full bg-emerald px-6 py-2.5 text-sm font-medium text-sand"
+                                            >
+                                                Se connecter
+                                            </Link>
+                                        </div>
+                                    )
+                                )}
+                            </div>
+                        </Reveal>
+                    </div>
+                </div>
+
+                {/* Contenu similaire */}
+                <Reveal delay={0.4}>
+                    <div className="mt-20">
+                        <h2 className="ivoire-serif text-2xl text-cocoa">Contenus similaires</h2>
+                        <div className="mt-8">
+                            <DynamicContentGrid
+                                items={contents.filter(c => c.id !== content.id && c.category?.id === content.category?.id).slice(0, 3)}
+                            />
+                        </div>
+                    </div>
                 </Reveal>
             </div>
         </Page>
@@ -1677,6 +1869,7 @@ function IvoireApp() {
                     <Route path="/" element={<Home />} />
                     <Route path="/a-propos" element={<APropos />} />
                     <Route path="/contenus" element={<Contenus />} />
+                    <Route path="/contenus/:slug" element={<ContentDetail />} />
                     <Route path="/galerie" element={<Galerie />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/connexion" element={<Login />} />
@@ -1690,7 +1883,7 @@ function IvoireApp() {
 }
 
 export default function Welcome() {
-    const { testimonials = [], contents = [], categories = [], isAuthenticated = false, isAdmin = false } = usePage<PageProps>().props;
+    const { testimonials = [], contents = [], categories = [], currentContent = null, isAuthenticated = false, isAdmin = false } = usePage<PageProps>().props;
 
     return (
         <>
@@ -1699,7 +1892,7 @@ export default function Welcome() {
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet" />
             </Head>
-            <AppContext.Provider value={{ testimonials, contents, categories, isAuthenticated, isAdmin }}>
+            <AppContext.Provider value={{ testimonials, contents, categories, currentContent, isAuthenticated, isAdmin }}>
                 <BrowserRouter>
                     <IvoireApp />
                 </BrowserRouter>

@@ -1,13 +1,14 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard,
     MessageSquareQuote,
     Video,
     Users,
-    Settings,
+    UsersRound,
+    Mail,
     LogOut,
-    Bell,
     ChevronRight,
     Plus,
     Trash2,
@@ -16,8 +17,72 @@ import {
     BadgeCheck,
     X,
     Pencil,
+    AlertTriangle,
 } from 'lucide-react';
 import ElevationLogo from '@/components/ivoire/elevation-logo';
+
+function ConfirmModal({ 
+    open, 
+    onClose, 
+    onConfirm, 
+    title, 
+    message,
+    confirmText = 'Supprimer',
+    loading = false,
+}: { 
+    open: boolean; 
+    onClose: () => void; 
+    onConfirm: () => void;
+    title: string;
+    message: string;
+    confirmText?: string;
+    loading?: boolean;
+}) {
+    if (!open) return null;
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+                <div className="absolute inset-0 bg-cocoa/60 backdrop-blur-sm" onClick={onClose} />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+                >
+                    <div className="p-6 text-center">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-terracotta/10">
+                            <AlertTriangle size={28} className="text-terracotta" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-cocoa">{title}</h3>
+                        <p className="mt-2 text-sm text-cocoa/60">{message}</p>
+                    </div>
+                    <div className="flex gap-3 border-t border-cocoa/10 bg-sand/30 p-4">
+                        <button
+                            onClick={onClose}
+                            disabled={loading}
+                            className="flex-1 rounded-xl border border-cocoa/15 py-3 text-sm font-medium text-cocoa transition hover:bg-white disabled:opacity-50"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            disabled={loading}
+                            className="flex-1 rounded-xl bg-terracotta py-3 text-sm font-medium text-sand transition hover:bg-terracotta/90 disabled:opacity-50"
+                        >
+                            {loading ? 'Suppression...' : confirmText}
+                        </button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
+}
 
 interface Testimonial {
     id: number;
@@ -39,7 +104,8 @@ const NAV = [
     { icon: Video, label: 'Contenus', href: '/admin/contenus' },
     { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages', active: true },
     { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
-    { icon: Settings, label: 'Paramètres', href: '#' },
+    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
+    { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
 ];
 
 function Sidebar() {
@@ -215,15 +281,24 @@ function TestimonialForm({ editing, onClose }: { editing: Testimonial | null; on
 
 function TestimonialsTable({ testimonials, onEdit }: { testimonials: Testimonial[]; onEdit: (t: Testimonial) => void }) {
     const [pendingId, setPendingId] = useState<number | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<Testimonial | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const toggle = (id: number) => {
         setPendingId(id);
         router.patch(`/admin/temoignages/${id}/toggle`, {}, { preserveScroll: true, onFinish: () => setPendingId(null) });
     };
 
-    const remove = (id: number) => {
-        if (!confirm('Supprimer ce témoignage ?')) return;
-        router.delete(`/admin/temoignages/${id}`, { preserveScroll: true });
+    const confirmDelete = () => {
+        if (!deleteTarget) return;
+        setDeleting(true);
+        router.delete(`/admin/temoignages/${deleteTarget.id}`, { 
+            preserveScroll: true,
+            onFinish: () => {
+                setDeleting(false);
+                setDeleteTarget(null);
+            },
+        });
     };
 
     if (testimonials.length === 0) {
@@ -292,7 +367,7 @@ function TestimonialsTable({ testimonials, onEdit }: { testimonials: Testimonial
                                         {t.is_published ? <EyeOff size={16} /> : <Eye size={16} />}
                                     </button>
                                     <button
-                                        onClick={() => remove(t.id)}
+                                        onClick={() => setDeleteTarget(t)}
                                         title="Supprimer"
                                         className="rounded-lg p-2 text-cocoa/50 transition hover:bg-terracotta/10 hover:text-terracotta"
                                     >
@@ -304,6 +379,16 @@ function TestimonialsTable({ testimonials, onEdit }: { testimonials: Testimonial
                     ))}
                 </tbody>
             </table>
+            
+            <ConfirmModal
+                open={deleteTarget !== null}
+                onClose={() => setDeleteTarget(null)}
+                onConfirm={confirmDelete}
+                title="Supprimer ce témoignage ?"
+                message={deleteTarget ? `Le témoignage de "${deleteTarget.name}" sera définitivement supprimé.` : ''}
+                confirmText="Supprimer"
+                loading={deleting}
+            />
         </div>
     );
 }

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 /* @chisel-registration */
 
+use App\Actions\Fortify\AuthenticateUser;
 use App\Actions\Fortify\CreateNewUser;
 /* @end-chisel-registration */
 use App\Actions\Fortify\ResetUserPassword;
@@ -42,6 +43,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     private function configureActions(): void
     {
+        Fortify::authenticateUsing(new AuthenticateUser);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         /* @chisel-registration */
         Fortify::createUsersUsing(CreateNewUser::class);

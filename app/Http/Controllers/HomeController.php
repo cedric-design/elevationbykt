@@ -11,9 +11,9 @@ use Inertia\Response;
 
 class HomeController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, ?string $slug = null): Response
     {
-        return Inertia::render('welcome', [
+        $data = [
             'testimonials' => Testimonial::where('is_published', true)->latest()->get(),
             'contents' => Content::with('category')
                 ->where('is_published', true)
@@ -22,6 +22,17 @@ class HomeController extends Controller
             'categories' => ContentCategory::orderBy('sort_order')->get(),
             'isAuthenticated' => $request->user() !== null,
             'isAdmin' => $request->user()?->isAdmin() ?? false,
-        ]);
+        ];
+
+        if ($slug) {
+            $content = Content::with('category')
+                ->where('slug', $slug)
+                ->where('is_published', true)
+                ->first();
+            
+            $data['currentContent'] = $content;
+        }
+
+        return Inertia::render('welcome', $data);
     }
 }

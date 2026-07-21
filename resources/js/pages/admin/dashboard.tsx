@@ -4,6 +4,8 @@ import {
     MessageSquareQuote,
     Video,
     Users,
+    UsersRound,
+    Mail,
     Settings,
     LogOut,
     Bell,
@@ -63,7 +65,8 @@ const ADMIN_NAV = [
     { icon: Video, label: 'Contenus', href: '/admin/contenus' },
     { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
     { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
-    { icon: Settings, label: 'Paramètres', href: '#' },
+    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
+    { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
 ];
 
 const CLIENT_NAV = [

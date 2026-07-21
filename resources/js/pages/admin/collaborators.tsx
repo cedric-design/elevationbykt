@@ -5,7 +5,8 @@ import {
     MessageSquareQuote,
     Video,
     Users,
-    Settings,
+    UsersRound,
+    Mail as MailIcon,
     LogOut,
     ChevronRight,
     Plus,
@@ -15,9 +16,81 @@ import {
     RefreshCw,
     CheckCircle,
     Clock,
+    AlertTriangle,
+    UserX,
+    UserCheck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ElevationLogo from '@/components/ivoire/elevation-logo';
+
+function ConfirmModal({ 
+    open, 
+    onClose, 
+    onConfirm, 
+    title, 
+    message,
+    confirmText = 'Confirmer',
+    variant = 'danger',
+    loading = false,
+}: { 
+    open: boolean; 
+    onClose: () => void; 
+    onConfirm: () => void;
+    title: string;
+    message: string;
+    confirmText?: string;
+    variant?: 'danger' | 'warning';
+    loading?: boolean;
+}) {
+    if (!open) return null;
+
+    const colors = variant === 'danger' 
+        ? { bg: 'bg-terracotta/10', icon: 'text-terracotta', btn: 'bg-terracotta hover:bg-terracotta/90' }
+        : { bg: 'bg-honey/10', icon: 'text-honey', btn: 'bg-honey hover:bg-honey/90 text-cocoa' };
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+                <div className="absolute inset-0 bg-cocoa/60 backdrop-blur-sm" onClick={onClose} />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+                >
+                    <div className="p-6 text-center">
+                        <div className={`mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full ${colors.bg}`}>
+                            <AlertTriangle size={28} className={colors.icon} />
+                        </div>
+                        <h3 className="text-xl font-semibold text-cocoa">{title}</h3>
+                        <p className="mt-2 text-sm text-cocoa/60">{message}</p>
+                    </div>
+                    <div className="flex gap-3 border-t border-cocoa/10 bg-sand/30 p-4">
+                        <button
+                            onClick={onClose}
+                            disabled={loading}
+                            className="flex-1 rounded-xl border border-cocoa/15 py-3 text-sm font-medium text-cocoa transition hover:bg-white disabled:opacity-50"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            disabled={loading}
+                            className={`flex-1 rounded-xl py-3 text-sm font-medium text-sand transition disabled:opacity-50 ${colors.btn}`}
+                        >
+                            {loading ? 'Chargement...' : confirmText}
+                        </button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
+}
 
 interface Collaborator {
     id: number;
@@ -27,6 +100,7 @@ interface Collaborator {
     created_at: string;
     email_verified_at: string | null;
     invitation_sent_at: string | null;
+    is_active: boolean;
 }
 
 interface PageProps {
@@ -40,7 +114,8 @@ const NAV = [
     { icon: Video, label: 'Contenus', href: '/admin/contenus' },
     { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
     { icon: Users, label: 'Équipe', href: '/admin/collaborateurs', active: true },
-    { icon: Settings, label: 'Paramètres', href: '#' },
+    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
+    { icon: MailIcon, label: 'Newsletter', href: '/admin/newsletter' },
 ];
 
 function Sidebar() {
@@ -178,8 +253,12 @@ function CollaboratorForm({ onClose }: { onClose: () => void }) {
 
 function CollaboratorRow({ collab, currentUserId }: { collab: Collaborator; currentUserId: number }) {
     const [resending, setResending] = useState(false);
-    const isActive = collab.email_verified_at !== null;
-    const isPending = !isActive && collab.invitation_sent_at !== null;
+    const [showDelete, setShowDelete] = useState(false);
+    const [showToggle, setShowToggle] = useState(false);
+    const [loading, setLoading] = useState(false);
+    
+    const hasAccepted = collab.email_verified_at !== null;
+    const isPending = !hasAccepted && collab.invitation_sent_at !== null;
     const isCurrentUser = collab.id === currentUserId;
 
     const resend = () => {
@@ -189,70 +268,125 @@ function CollaboratorRow({ collab, currentUserId }: { collab: Collaborator; curr
         });
     };
 
-    const remove = () => {
-        if (confirm(`Supprimer ${collab.name} de l'équipe ?`)) {
-            router.delete(`/admin/collaborateurs/${collab.id}`);
-        }
+    const confirmDelete = () => {
+        setLoading(true);
+        router.delete(`/admin/collaborateurs/${collab.id}`, {
+            onFinish: () => {
+                setLoading(false);
+                setShowDelete(false);
+            },
+        });
+    };
+
+    const confirmToggle = () => {
+        setLoading(true);
+        router.patch(`/admin/collaborateurs/${collab.id}/toggle`, {}, {
+            onFinish: () => {
+                setLoading(false);
+                setShowToggle(false);
+            },
+        });
     };
 
     return (
-        <tr className="border-b border-cocoa/8 transition hover:bg-sand/30">
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald/10 font-semibold text-emerald">
-                        {collab.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                        <div className="font-medium text-cocoa">
-                            {collab.name}
-                            {isCurrentUser && <span className="ml-2 text-xs text-cocoa/40">(vous)</span>}
+        <>
+            <tr className="border-b border-cocoa/8 transition hover:bg-sand/30">
+                <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                        <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full font-semibold ${collab.is_active ? 'bg-emerald/10 text-emerald' : 'bg-cocoa/10 text-cocoa/40'}`}>
+                            {collab.name.charAt(0).toUpperCase()}
                         </div>
-                        <div className="text-sm text-cocoa/50">{collab.email}</div>
+                        <div>
+                            <div className={`font-medium ${collab.is_active ? 'text-cocoa' : 'text-cocoa/50'}`}>
+                                {collab.name}
+                                {isCurrentUser && <span className="ml-2 text-xs text-cocoa/40">(vous)</span>}
+                            </div>
+                            <div className="text-sm text-cocoa/50">{collab.email}</div>
+                        </div>
                     </div>
-                </div>
-            </td>
-            <td className="px-6 py-4 text-sm text-cocoa/60">{collab.phone || '—'}</td>
-            <td className="px-6 py-4">
-                {isActive ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald/10 px-3 py-1 text-xs font-medium text-emerald">
-                        <CheckCircle size={12} />
-                        Actif
-                    </span>
-                ) : isPending ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-honey/20 px-3 py-1 text-xs font-medium text-honey">
-                        <Clock size={12} />
-                        En attente
-                    </span>
-                ) : (
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-cocoa/10 px-3 py-1 text-xs font-medium text-cocoa/60">
-                        Inactif
-                    </span>
-                )}
-            </td>
-            <td className="px-6 py-4">
-                <div className="flex items-center justify-end gap-2">
-                    {isPending && (
-                        <button
-                            onClick={resend}
-                            disabled={resending}
-                            className="rounded-lg p-2 text-cocoa/40 transition hover:bg-emerald/10 hover:text-emerald disabled:opacity-50"
-                            title="Renvoyer l'invitation"
-                        >
-                            <RefreshCw size={16} className={resending ? 'animate-spin' : ''} />
-                        </button>
+                </td>
+                <td className="px-6 py-4 text-sm text-cocoa/60">{collab.phone || '—'}</td>
+                <td className="px-6 py-4">
+                    {!collab.is_active ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-terracotta/10 px-3 py-1 text-xs font-medium text-terracotta">
+                            <UserX size={12} />
+                            Désactivé
+                        </span>
+                    ) : hasAccepted ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald/10 px-3 py-1 text-xs font-medium text-emerald">
+                            <CheckCircle size={12} />
+                            Actif
+                        </span>
+                    ) : isPending ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-honey/20 px-3 py-1 text-xs font-medium text-honey">
+                            <Clock size={12} />
+                            En attente
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-cocoa/10 px-3 py-1 text-xs font-medium text-cocoa/60">
+                            Inactif
+                        </span>
                     )}
-                    {!isCurrentUser && (
-                        <button
-                            onClick={remove}
-                            className="rounded-lg p-2 text-cocoa/40 transition hover:bg-terracotta/10 hover:text-terracotta"
-                            title="Supprimer"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    )}
-                </div>
-            </td>
-        </tr>
+                </td>
+                <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                        {isPending && (
+                            <button
+                                onClick={resend}
+                                disabled={resending}
+                                className="rounded-lg p-2 text-cocoa/40 transition hover:bg-emerald/10 hover:text-emerald disabled:opacity-50"
+                                title="Renvoyer l'invitation"
+                            >
+                                <RefreshCw size={16} className={resending ? 'animate-spin' : ''} />
+                            </button>
+                        )}
+                        {!isCurrentUser && hasAccepted && (
+                            <button
+                                onClick={() => setShowToggle(true)}
+                                className={`rounded-lg p-2 transition ${collab.is_active ? 'text-cocoa/40 hover:bg-honey/10 hover:text-honey' : 'text-cocoa/40 hover:bg-emerald/10 hover:text-emerald'}`}
+                                title={collab.is_active ? 'Désactiver' : 'Activer'}
+                            >
+                                {collab.is_active ? <UserX size={16} /> : <UserCheck size={16} />}
+                            </button>
+                        )}
+                        {!isCurrentUser && (
+                            <button
+                                onClick={() => setShowDelete(true)}
+                                className="rounded-lg p-2 text-cocoa/40 transition hover:bg-terracotta/10 hover:text-terracotta"
+                                title="Supprimer"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        )}
+                    </div>
+                </td>
+            </tr>
+
+            <ConfirmModal
+                open={showDelete}
+                onClose={() => setShowDelete(false)}
+                onConfirm={confirmDelete}
+                title="Supprimer ce collaborateur ?"
+                message={`${collab.name} sera définitivement supprimé de l'équipe.`}
+                confirmText="Supprimer"
+                variant="danger"
+                loading={loading}
+            />
+
+            <ConfirmModal
+                open={showToggle}
+                onClose={() => setShowToggle(false)}
+                onConfirm={confirmToggle}
+                title={collab.is_active ? 'Désactiver ce collaborateur ?' : 'Activer ce collaborateur ?'}
+                message={collab.is_active 
+                    ? `${collab.name} ne pourra plus accéder au tableau de bord.`
+                    : `${collab.name} pourra à nouveau accéder au tableau de bord.`
+                }
+                confirmText={collab.is_active ? 'Désactiver' : 'Activer'}
+                variant="warning"
+                loading={loading}
+            />
+        </>
     );
 }
 

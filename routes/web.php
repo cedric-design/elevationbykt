@@ -3,10 +3,13 @@
 use App\Http\Controllers\Admin\CollaboratorController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UploadController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\SubscriberController;
 use Illuminate\Support\Facades\Route;
 
 // Page d'accueil SPA — toutes ces routes passent par HomeController
@@ -14,10 +17,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/a-propos', HomeController::class)->name('a-propos');
 Route::get('/contenus', HomeController::class)->name('contenus');
+Route::get('/contenus/{slug}', HomeController::class)->name('contenu.show');
 Route::get('/galerie', HomeController::class)->name('galerie');
 Route::get('/contact', HomeController::class)->name('contact');
 Route::get('/connexion', HomeController::class)->name('connexion');
 Route::get('/inscription', HomeController::class)->name('inscription');
+
+// Newsletter subscription
+Route::post('/newsletter/subscribe', [SubscriberController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/unsubscribe/{token}', [SubscriberController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
 
 // Invitation collaborateur
 Route::get('/invitation/{token}', [InvitationController::class, 'show'])->name('invitation.show');
@@ -49,10 +57,22 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('collaborateurs', [CollaboratorController::class, 'index'])->name('collaborators.index');
     Route::post('collaborateurs', [CollaboratorController::class, 'store'])->name('collaborators.store');
     Route::post('collaborateurs/{user}/resend', [CollaboratorController::class, 'resend'])->name('collaborators.resend');
+    Route::patch('collaborateurs/{user}/toggle', [CollaboratorController::class, 'toggleActive'])->name('collaborators.toggle');
     Route::delete('collaborateurs/{user}', [CollaboratorController::class, 'destroy'])->name('collaborators.destroy');
+    
+    Route::get('utilisateurs', [UserController::class, 'index'])->name('users.index');
+    Route::patch('utilisateurs/{user}/toggle', [UserController::class, 'toggleActive'])->name('users.toggle');
+    Route::delete('utilisateurs/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     
     Route::post('upload/video', [UploadController::class, 'video'])->name('upload.video');
     Route::post('upload/image', [UploadController::class, 'image'])->name('upload.image');
+    
+    Route::get('newsletter', [NewsletterController::class, 'index'])->name('newsletter.index');
+    Route::post('newsletter', [NewsletterController::class, 'store'])->name('newsletter.store');
+    Route::patch('newsletter/{newsletter}', [NewsletterController::class, 'update'])->name('newsletter.update');
+    Route::post('newsletter/{newsletter}/send', [NewsletterController::class, 'send'])->name('newsletter.send');
+    Route::delete('newsletter/{newsletter}', [NewsletterController::class, 'destroy'])->name('newsletter.destroy');
+    Route::delete('subscribers/{subscriber}', [NewsletterController::class, 'destroySubscriber'])->name('subscribers.destroy');
 });
 
 require __DIR__.'/settings.php';
