@@ -1,5 +1,6 @@
 import { Head, usePage } from '@inertiajs/react';
-import { createContext, ReactNode, useContext, useRef, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
+import { Lock } from 'lucide-react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion, useScroll, useTransform } from 'framer-motion';
 import SmartImage from '@/components/ivoire/smart-image';
@@ -45,11 +46,19 @@ interface Content {
     is_featured: boolean;
 }
 
+interface Advertisement {
+    id: number;
+    title: string;
+    image: string;
+    link: string | null;
+}
+
 interface PageProps {
     testimonials: Testimonial[];
     contents: Content[];
     categories: Category[];
     currentContent?: Content | null;
+    advertisement?: Advertisement | null;
     isAuthenticated: boolean;
     isAdmin: boolean;
     [key: string]: unknown;
@@ -1256,14 +1265,20 @@ function ContentDetail() {
                     <Reveal>
                         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald/20 via-honey/10 to-terracotta/20">
                             {isPaid ? (
-                                <div className="relative aspect-video">
+                                <div 
+                                    className="protected-content relative aspect-video"
+                                    onContextMenu={(e) => e.preventDefault()}
+                                    onCopy={(e) => e.preventDefault()}
+                                >
                                     {content.cover_image ? (
-                                        <img src={content.cover_image} alt={content.title} className="h-full w-full object-cover" />
+                                        <img src={content.cover_image} alt={content.title} className="h-full w-full object-cover" draggable={false} />
                                     ) : (
                                         <div className="h-full w-full" />
                                     )}
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-cocoa/60 backdrop-blur-sm">
-                                        <span className="mb-4 grid h-20 w-20 place-items-center rounded-full bg-honey text-3xl text-cocoa">🔒</span>
+                                        <span className="mb-4 grid h-20 w-20 place-items-center rounded-full bg-honey text-cocoa">
+                                            <Lock size={40} strokeWidth={2.5} />
+                                        </span>
                                         <p className="ivoire-serif text-2xl text-sand">Contenu payant</p>
                                         <p className="mt-2 text-sand/80">Débloque l'accès complet pour découvrir ce contenu.</p>
                                     </div>
@@ -1857,12 +1872,120 @@ function Footer() {
     );
 }
 
-function IvoireApp() {
+function AdvertisementPopup({ ad }: { ad: Advertisement }) {
+    const [visible, setVisible] = useState(false);
+    const [dismissed, setDismissed] = useState(false);
+
+    useEffect(() => {
+        const dismissed = sessionStorage.getItem(`ad-${ad.id}-dismissed`);
+        if (!dismissed) {
+            const timer = setTimeout(() => setVisible(true), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [ad.id]);
+
+    const close = () => {
+        setVisible(false);
+        setDismissed(true);
+        sessionStorage.setItem(`ad-${ad.id}-dismissed`, 'true');
+    };
+
+    if (dismissed || !visible) return null;
+
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            >
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 bg-cocoa/70 backdrop-blur-sm"
+                    onClick={close}
+                />
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.8, y: 40 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className="relative max-h-[90vh] w-full max-w-lg overflow-hidden rounded-3xl bg-sand shadow-2xl"
+                >
+                    <button
+                        onClick={close}
+                        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-cocoa/80 text-sand transition hover:bg-cocoa"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                    {ad.link ? (
+                        <a href={ad.link} target="_blank" rel="noopener noreferrer" onClick={close}>
+                            <motion.img
+                                initial={{ scale: 1.1 }}
+                                animate={{ scale: 1 }}
+                                transition={{ duration: 0.6 }}
+                                src={ad.image}
+                                alt={ad.title}
+                                className="w-full object-contain"
+                            />
+                        </a>
+                    ) : (
+                        <motion.img
+                            initial={{ scale: 1.1 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.6 }}
+                            src={ad.image}
+                            alt={ad.title}
+                            className="w-full object-contain"
+                        />
+                    )}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-cocoa/90 to-transparent p-6 pt-12"
+                    >
+                        <p className="ivoire-serif text-center text-xl text-sand">{ad.title}</p>
+                        {ad.link && (
+                            <a
+                                href={ad.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
+                                className="mx-auto mt-4 block w-fit rounded-full bg-honey px-6 py-2.5 text-sm font-medium text-cocoa transition hover:bg-sand"
+                            >
+                                En savoir plus
+                            </a>
+                        )}
+                    </motion.div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
+}
+
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [pathname]);
+    
+    return null;
+}
+
+function IvoireApp({ advertisement }: { advertisement?: Advertisement | null }) {
     const location = useLocation();
     const isAuthRoute = ['/connexion', '/inscription'].includes(location.pathname);
+    const isHomePage = location.pathname === '/';
 
     return (
         <div className="tpl-ivoire min-h-screen">
+            <ScrollToTop />
             {!isAuthRoute && <Nav />}
             <AnimatePresence mode="wait">
                 <Routes location={location} key={location.pathname}>
@@ -1878,12 +2001,13 @@ function IvoireApp() {
                 </Routes>
             </AnimatePresence>
             {!isAuthRoute && <Footer />}
+            {isHomePage && advertisement && <AdvertisementPopup ad={advertisement} />}
         </div>
     );
 }
 
 export default function Welcome() {
-    const { testimonials = [], contents = [], categories = [], currentContent = null, isAuthenticated = false, isAdmin = false } = usePage<PageProps>().props;
+    const { testimonials = [], contents = [], categories = [], currentContent = null, advertisement = null, isAuthenticated = false, isAdmin = false } = usePage<PageProps>().props;
 
     return (
         <>
@@ -1894,7 +2018,7 @@ export default function Welcome() {
             </Head>
             <AppContext.Provider value={{ testimonials, contents, categories, currentContent, isAuthenticated, isAdmin }}>
                 <BrowserRouter>
-                    <IvoireApp />
+                    <IvoireApp advertisement={advertisement} />
                 </BrowserRouter>
             </AppContext.Provider>
         </>

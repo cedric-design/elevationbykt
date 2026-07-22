@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Advertisement;
 use App\Models\Content;
 use App\Models\ContentCategory;
 use App\Models\Testimonial;
@@ -20,6 +21,7 @@ class HomeController extends Controller
                 ->latest()
                 ->get(),
             'categories' => ContentCategory::orderBy('sort_order')->get(),
+            'advertisement' => Advertisement::active()->latest()->first(),
             'isAuthenticated' => $request->user() !== null,
             'isAdmin' => $request->user()?->isAdmin() ?? false,
         ];

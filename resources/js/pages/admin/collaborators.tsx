@@ -1,14 +1,7 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
-    LayoutDashboard,
-    MessageSquareQuote,
-    Video,
     Users,
-    UsersRound,
-    Mail as MailIcon,
-    LogOut,
-    ChevronRight,
     Plus,
     X,
     Mail,
@@ -21,7 +14,7 @@ import {
     UserCheck,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ElevationLogo from '@/components/ivoire/elevation-logo';
+import { AdminShell, AdminPanel, AdminEmpty } from '@/components/admin/admin-shell';
 
 function ConfirmModal({ 
     open, 
@@ -107,53 +100,6 @@ interface PageProps {
     collaborators: Collaborator[];
     auth: { user: { name: string; email: string; id: number } };
     [key: string]: unknown;
-}
-
-const NAV = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
-    { icon: Video, label: 'Contenus', href: '/admin/contenus' },
-    { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
-    { icon: Users, label: 'Équipe', href: '/admin/collaborateurs', active: true },
-    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
-    { icon: MailIcon, label: 'Newsletter', href: '/admin/newsletter' },
-];
-
-function Sidebar() {
-    return (
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col bg-cocoa lg:flex">
-            <div className="flex h-16 items-center gap-3 px-6">
-                <ElevationLogo size={32} className="brightness-0 invert" />
-                <span className="text-lg font-semibold text-sand">ÉLÉVATION</span>
-            </div>
-            <nav className="mt-4 flex-1 space-y-1 px-3">
-                {NAV.map(({ icon: Icon, label, href, active }) => (
-                    <a
-                        key={label}
-                        href={href}
-                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                            active ? 'bg-emerald text-sand' : 'text-sand/60 hover:bg-white/5 hover:text-sand'
-                        }`}
-                    >
-                        <Icon size={18} />
-                        {label}
-                    </a>
-                ))}
-            </nav>
-            <div className="border-t border-white/10 p-3">
-                <a href="/" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-white/5 hover:text-sand">
-                    <ChevronRight size={18} />
-                    Voir le site
-                </a>
-                <button
-                    onClick={() => router.post('/logout')}
-                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-terracotta/20 hover:text-terracotta"
-                >
-                    <LogOut size={18} />
-                    Déconnexion
-                </button>
-            </div>
-        </aside>
-    );
 }
 
 function CollaboratorForm({ onClose }: { onClose: () => void }) {
@@ -397,61 +343,56 @@ export default function Collaborators() {
     return (
         <>
             <Head title="Équipe — ÉLÉVATION" />
-            <div className="min-h-screen bg-[#f8f6f2]">
-                <Sidebar />
-                <div className="lg:pl-[260px]">
-                    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-cocoa/10 bg-white/80 px-6 backdrop-blur-md lg:px-8">
-                        <div>
-                            <h1 className="text-xl font-semibold text-cocoa">Équipe</h1>
-                            <p className="text-sm text-cocoa/50">Gérer les collaborateurs administrateurs</p>
+            <AdminShell
+                current="/admin/collaborateurs"
+                title="Équipe"
+                subtitle="Gérer les collaborateurs administrateurs"
+                user={auth.user}
+                actions={
+                    <button
+                        onClick={() => setShowForm(true)}
+                        className="flex items-center gap-2 rounded-full bg-emerald px-5 py-2.5 text-sm font-medium text-sand shadow-lg shadow-emerald/25 transition hover:bg-cocoa"
+                    >
+                        <Plus size={16} />
+                        Inviter
+                    </button>
+                }
+            >
+                <AdminPanel>
+                    {collaborators.length === 0 ? (
+                        <AdminEmpty
+                            icon={Users}
+                            title="Aucun collaborateur pour le moment"
+                            action={
+                                <button
+                                    onClick={() => setShowForm(true)}
+                                    className="text-sm font-medium text-emerald transition hover:text-cocoa"
+                                >
+                                    + Inviter le premier collaborateur
+                                </button>
+                            }
+                        />
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-cocoa/10 text-left text-xs font-medium uppercase tracking-wider text-cocoa/50">
+                                        <th className="px-6 py-4">Collaborateur</th>
+                                        <th className="px-6 py-4">Téléphone</th>
+                                        <th className="px-6 py-4">Statut</th>
+                                        <th className="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {collaborators.map((c) => (
+                                        <CollaboratorRow key={c.id} collab={c} currentUserId={auth.user.id} />
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                        <button
-                            onClick={() => setShowForm(true)}
-                            className="flex items-center gap-2 rounded-xl bg-emerald px-4 py-2.5 text-sm font-medium text-sand shadow-lg shadow-emerald/20 transition hover:bg-cocoa"
-                        >
-                            <Plus size={16} />
-                            Inviter
-                        </button>
-                    </header>
-
-                    <main className="p-6 lg:p-8">
-                        <div className="rounded-2xl border border-cocoa/10 bg-white">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-cocoa/10 text-left text-xs font-medium uppercase tracking-wider text-cocoa/50">
-                                            <th className="px-6 py-4">Collaborateur</th>
-                                            <th className="px-6 py-4">Téléphone</th>
-                                            <th className="px-6 py-4">Statut</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {collaborators.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={4} className="px-6 py-12 text-center text-cocoa/50">
-                                                    <Users size={40} className="mx-auto mb-3 opacity-30" />
-                                                    <p>Aucun collaborateur pour le moment</p>
-                                                    <button
-                                                        onClick={() => setShowForm(true)}
-                                                        className="mt-3 text-sm font-medium text-emerald hover:text-cocoa"
-                                                    >
-                                                        + Inviter le premier collaborateur
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            collaborators.map((c) => (
-                                                <CollaboratorRow key={c.id} collab={c} currentUserId={auth.user.id} />
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </main>
-                </div>
-            </div>
+                    )}
+                </AdminPanel>
+            </AdminShell>
 
             <AnimatePresence>
                 {showForm && <CollaboratorForm onClose={() => setShowForm(false)} />}

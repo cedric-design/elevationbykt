@@ -1,24 +1,26 @@
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import {
-    LayoutDashboard,
     MessageSquareQuote,
     Video,
     Users,
-    UsersRound,
     Mail,
+    Megaphone,
     Settings,
-    LogOut,
-    Bell,
-    ChevronRight,
     TrendingUp,
     Eye,
     DollarSign,
     UserCheck,
     ArrowUpRight,
+    ArrowRight,
     Calendar,
     Activity,
+    Sparkles,
+    BadgeCheck,
+    Clock,
 } from 'lucide-react';
 import ElevationLogo from '@/components/ivoire/elevation-logo';
+import { AdminShell, AdminStatCard, AdminPanel } from '@/components/admin/admin-shell';
 
 interface Testimonial {
     id: number;
@@ -60,383 +62,269 @@ interface PageProps {
     [key: string]: unknown;
 }
 
-const ADMIN_NAV = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/espace', active: true },
-    { icon: Video, label: 'Contenus', href: '/admin/contenus' },
-    { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
-    { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
-    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
-    { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
-];
+const rise = {
+    initial: { opacity: 0, y: 18 },
+    animate: { opacity: 1, y: 0 },
+};
 
-const CLIENT_NAV = [
-    { icon: LayoutDashboard, label: 'Mon espace', href: '/espace', active: true },
-    { icon: Video, label: 'Mes cours', href: '#' },
-    { icon: Settings, label: 'Paramètres', href: '#' },
-];
-
-function Sidebar({ isAdmin }: { isAdmin: boolean }) {
-    const NAV = isAdmin ? ADMIN_NAV : CLIENT_NAV;
-
+function HeroBanner({ name, stats, isAdmin }: { name: string; stats: Stats; isAdmin: boolean }) {
     return (
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col bg-cocoa lg:flex">
-            <div className="flex h-16 items-center gap-3 px-6">
-                <ElevationLogo size={32} className="brightness-0 invert" />
-                <span className="text-lg font-semibold text-sand">ÉLÉVATION</span>
+        <motion.div
+            {...rise}
+            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald via-[#1b5f49] to-[#0f3226] p-8 text-sand shadow-2xl shadow-emerald/25 lg:p-10"
+        >
+            <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-honey/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-28 right-40 h-64 w-64 rounded-full bg-terracotta/20 blur-3xl" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.04)_50%,transparent_60%)]" />
+            <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 opacity-[0.08] lg:block">
+                <ElevationLogo size={220} className="brightness-0 invert" />
             </div>
 
-            <nav className="mt-4 flex-1 space-y-1 px-3">
-                {NAV.map(({ icon: Icon, label, href, active }) => (
-                    <a
-                        key={label}
-                        href={href}
-                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                            active
-                                ? 'bg-emerald text-sand'
-                                : 'text-sand/60 hover:bg-white/5 hover:text-sand'
-                        }`}
-                    >
-                        <Icon size={18} />
-                        {label}
-                    </a>
-                ))}
-            </nav>
+            <div className="relative">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-medium tracking-wide text-honey backdrop-blur-sm">
+                    <Sparkles size={13} />
+                    {isAdmin ? 'Tableau de bord' : 'Mon espace'}
+                </span>
+                <h2 className="ivoire-serif mt-4 max-w-lg text-3xl leading-tight lg:text-4xl">
+                    Bienvenue, {name.split(' ')[0]}.
+                </h2>
+                <p className="mt-2 max-w-md text-sm text-sand/70">
+                    {isAdmin
+                        ? "Voici un aperçu de l'activité d'ÉLÉVATION aujourd'hui."
+                        : "Accède à tes formations et continue ton parcours d'élévation."}
+                </p>
 
-            <div className="border-t border-white/10 p-3">
-                <a
-                    href="/"
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-white/5 hover:text-sand"
-                >
-                    <ChevronRight size={18} />
-                    Voir le site
-                </a>
-                <button
-                    onClick={() => router.post('/logout')}
-                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-terracotta/20 hover:text-terracotta"
-                >
-                    <LogOut size={18} />
-                    Déconnexion
-                </button>
-            </div>
-        </aside>
-    );
-}
-
-function Header({ name, isAdmin }: { name: string; isAdmin: boolean }) {
-    return (
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-cocoa/10 bg-white/80 px-6 backdrop-blur-md lg:px-8">
-            <div>
-                <h1 className="text-xl font-semibold text-cocoa">
-                    {isAdmin ? 'Dashboard' : 'Mon espace'}
-                </h1>
-                <p className="text-sm text-cocoa/50">Bienvenue, {name.split(' ')[0]}</p>
-            </div>
-            <div className="flex items-center gap-4">
-                <button className="relative rounded-full border border-cocoa/10 p-2.5 text-cocoa/60 transition hover:bg-cocoa/5 hover:text-cocoa">
-                    <Bell size={18} />
-                    <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-terracotta" />
-                </button>
-                <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald to-emerald/70 grid place-items-center text-sand font-semibold">
-                        {name.charAt(0)}
+                {isAdmin ? (
+                    <div className="mt-7 flex flex-wrap gap-x-10 gap-y-4">
+                        <div>
+                            <div className="ivoire-serif text-3xl">{stats.members}</div>
+                            <div className="mt-0.5 text-xs uppercase tracking-wider text-sand/55">Membres</div>
+                        </div>
+                        <div className="hidden w-px bg-white/15 sm:block" />
+                        <div>
+                            <div className="ivoire-serif text-3xl">{stats.contents}</div>
+                            <div className="mt-0.5 text-xs uppercase tracking-wider text-sand/55">Contenus</div>
+                        </div>
+                        <div className="hidden w-px bg-white/15 sm:block" />
+                        <div>
+                            <div className="ivoire-serif text-3xl">{stats.published}</div>
+                            <div className="mt-0.5 text-xs uppercase tracking-wider text-sand/55">Témoignages publiés</div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </header>
-    );
-}
-
-function KPICard({ 
-    title, 
-    value, 
-    subtitle,
-    trend,
-    icon: Icon,
-    color = 'emerald'
-}: { 
-    title: string; 
-    value: string | number; 
-    subtitle?: string;
-    trend?: string;
-    icon: typeof Users;
-    color?: 'emerald' | 'honey' | 'terracotta' | 'cocoa';
-}) {
-    const colors = {
-        emerald: 'bg-emerald text-sand',
-        honey: 'bg-honey text-cocoa',
-        terracotta: 'bg-terracotta text-sand',
-        cocoa: 'bg-cocoa text-sand',
-    };
-    const iconBg = {
-        emerald: 'bg-white/20',
-        honey: 'bg-white/30',
-        terracotta: 'bg-white/20',
-        cocoa: 'bg-white/10',
-    };
-
-    return (
-        <div className={`rounded-2xl p-6 ${colors[color]}`}>
-            <div className="flex items-start justify-between">
-                <div className={`rounded-xl p-3 ${iconBg[color]}`}>
-                    <Icon size={20} />
-                </div>
-                {trend && (
-                    <span className="flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-xs font-medium">
-                        <TrendingUp size={12} />
-                        {trend}
-                    </span>
+                ) : (
+                    <a
+                        href="/contenus"
+                        className="mt-6 inline-flex items-center gap-2 rounded-full bg-honey px-6 py-3 text-sm font-semibold text-cocoa shadow-lg transition hover:bg-sand"
+                    >
+                        <Video size={16} />
+                        Voir les cours
+                    </a>
                 )}
             </div>
-            <div className="mt-4">
-                <div className="text-3xl font-bold">{value}</div>
-                <div className="text-sm opacity-80">{title}</div>
-                {subtitle && <div className="mt-1 text-xs opacity-60">{subtitle}</div>}
-            </div>
-        </div>
+        </motion.div>
     );
 }
 
-function StatCard({ 
-    title, 
-    value, 
-    subtitle,
+function QuickAction({
+    href,
     icon: Icon,
-}: { 
-    title: string; 
-    value: number | string; 
-    subtitle?: string;
-    icon: typeof Users;
+    title,
+    description,
+    gradient,
+    delay = 0,
+}: {
+    href: string;
+    icon: typeof Video;
+    title: string;
+    description: string;
+    gradient: string;
+    delay?: number;
 }) {
     return (
-        <div className="rounded-2xl border border-cocoa/10 bg-white p-6">
-            <div className="flex items-start justify-between">
-                <div className="rounded-xl bg-emerald/10 p-3">
-                    <Icon size={20} className="text-emerald" />
-                </div>
-            </div>
-            <div className="mt-4">
-                <div className="text-3xl font-bold text-cocoa">{value}</div>
-                <div className="text-sm text-cocoa/50">{title}</div>
-                {subtitle && <div className="mt-1 text-xs text-cocoa/40">{subtitle}</div>}
-            </div>
-        </div>
-    );
-}
-
-function QuickAction({ href, icon: Icon, title, description, color }: { href: string; icon: typeof Video; title: string; description: string; color: string }) {
-    return (
-        <a
+        <motion.a
+            {...rise}
+            transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
+            whileHover={{ y: -4 }}
             href={href}
-            className="group flex items-center gap-4 rounded-2xl border border-cocoa/10 bg-white p-5 transition hover:border-emerald/30 hover:shadow-lg"
+            className="group flex items-center gap-4 rounded-2xl border border-cocoa/[0.07] bg-white/90 p-5 shadow-sm backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg"
         >
-            <div className={`rounded-xl p-3 ${color}`}>
-                <Icon size={20} className="text-white" />
-            </div>
-            <div className="flex-1">
-                <div className="font-semibold text-cocoa group-hover:text-emerald">{title}</div>
-                <div className="text-sm text-cocoa/50">{description}</div>
-            </div>
-            <ArrowUpRight size={18} className="text-cocoa/30 transition group-hover:text-emerald" />
-        </a>
-    );
-}
-
-function RecentItem({ title, subtitle, status }: { title: string; subtitle: string; status: 'published' | 'draft' }) {
-    return (
-        <div className="flex items-center gap-4 rounded-xl p-3 transition hover:bg-sand/50">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald/10 text-emerald font-semibold text-sm">
-                {title.charAt(0)}
+            <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${gradient} text-sand shadow-md`}>
+                <Icon size={20} />
             </div>
             <div className="min-w-0 flex-1">
-                <div className="truncate font-medium text-cocoa">{title}</div>
-                <div className="truncate text-xs text-cocoa/50">{subtitle}</div>
+                <div className="font-semibold text-cocoa transition group-hover:text-emerald">{title}</div>
+                <div className="truncate text-xs text-cocoa/45">{description}</div>
             </div>
-            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium ${
-                status === 'published' ? 'bg-emerald/10 text-emerald' : 'bg-cocoa/10 text-cocoa/60'
-            }`}>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand/70 text-cocoa/40 transition-all duration-300 group-hover:bg-emerald group-hover:text-sand">
+                <ArrowUpRight size={15} />
+            </span>
+        </motion.a>
+    );
+}
+
+function RecentItem({ title, subtitle, status, index }: { title: string; subtitle: string; status: 'published' | 'draft'; index: number }) {
+    const palette = ['bg-emerald/10 text-emerald', 'bg-honey/15 text-honey', 'bg-terracotta/10 text-terracotta', 'bg-cocoa/8 text-cocoa'];
+    return (
+        <div className="flex items-center gap-4 rounded-xl px-3 py-2.5 transition hover:bg-sand/60">
+            <div className={`ivoire-serif grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm ${palette[index % palette.length]}`}>
+                {title.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium text-cocoa">{title}</div>
+                <div className="truncate text-xs text-cocoa/45">{subtitle}</div>
+            </div>
+            <span
+                className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                    status === 'published' ? 'bg-emerald/10 text-emerald' : 'bg-cocoa/[0.07] text-cocoa/50'
+                }`}
+            >
+                {status === 'published' ? <BadgeCheck size={11} /> : <Clock size={11} />}
                 {status === 'published' ? 'Publié' : 'Brouillon'}
             </span>
         </div>
     );
 }
 
-function AdminDashboard({ stats, testimonials, contents }: { stats: Stats; testimonials: Testimonial[]; contents: Content[] }) {
+function AdminDashboard({ stats, testimonials, contents, name }: { stats: Stats; testimonials: Testimonial[]; contents: Content[]; name: string }) {
     return (
         <>
-            {/* KPIs principaux */}
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <KPICard 
-                    icon={Activity} 
-                    title="Visiteurs aujourd'hui" 
-                    value={stats.visitorsToday} 
-                    subtitle="Visiteurs uniques"
-                    color="emerald"
-                />
-                <KPICard 
-                    icon={DollarSign} 
-                    title="Chiffre d'affaires" 
-                    value={`${stats.revenue.toLocaleString()} XOF`}
-                    trend={stats.revenueTrend}
-                    color="honey"
-                />
-                <KPICard 
-                    icon={UserCheck} 
-                    title="Clients" 
-                    value={stats.clients}
-                    subtitle={`${stats.members} membres au total`}
-                    color="terracotta"
-                />
-                <KPICard 
-                    icon={Video} 
-                    title="Contenus" 
-                    value={stats.contents}
-                    subtitle={`${stats.contentsPaid} payants · ${stats.contentsFree} gratuits`}
-                    color="cocoa"
-                />
+            <HeroBanner name={name} stats={stats} isAdmin />
+
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                <AdminStatCard icon={Activity} label="Visiteurs aujourd'hui" value={stats.visitorsToday} subtitle="Visiteurs uniques" accent="emerald" />
+                <AdminStatCard icon={DollarSign} label="Chiffre d'affaires" value={`${stats.revenue.toLocaleString()} XOF`} subtitle={stats.revenueTrend} accent="honey" />
+                <AdminStatCard icon={UserCheck} label="Clients" value={stats.clients} subtitle={`${stats.members} membres au total`} accent="terracotta" />
+                <AdminStatCard icon={Video} label="Contenus" value={stats.contents} subtitle={`${stats.contentsPaid} payants · ${stats.contentsFree} gratuits`} accent="cocoa" />
             </div>
 
-            {/* Stats secondaires */}
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <StatCard icon={MessageSquareQuote} title="Témoignages" value={stats.testimonials} subtitle={`${stats.published} publiés`} />
-                <StatCard icon={Eye} title="Contenus publiés" value={stats.contentsPublished} />
-                <StatCard icon={Users} title="Administrateurs" value={stats.admins} />
+            <div className="mt-5 grid gap-5 sm:grid-cols-3">
+                <AdminStatCard icon={MessageSquareQuote} label="Témoignages" value={stats.testimonials} subtitle={`${stats.published} publiés`} accent="emerald" />
+                <AdminStatCard icon={Eye} label="Contenus publiés" value={stats.contentsPublished} accent="honey" />
+                <AdminStatCard icon={Users} label="Administrateurs" value={stats.admins} accent="terracotta" />
             </div>
 
-            {/* Quick Actions */}
-            <div className="mt-8">
-                <h2 className="mb-4 text-lg font-semibold text-cocoa">Actions rapides</h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <QuickAction href="/admin/contenus" icon={Video} title="Gérer les contenus" description="Ajouter ou modifier vos cours" color="bg-emerald" />
-                    <QuickAction href="/admin/temoignages" icon={MessageSquareQuote} title="Témoignages" description="Gérer les avis clients" color="bg-honey" />
-                    <QuickAction href="/admin/collaborateurs" icon={Users} title="Équipe" description="Gérer les collaborateurs" color="bg-terracotta" />
+            <div className="mt-10">
+                <div className="mb-5 flex items-center gap-3">
+                    <h2 className="ivoire-serif text-xl text-cocoa">Actions rapides</h2>
+                    <span className="h-px flex-1 bg-gradient-to-r from-cocoa/15 to-transparent" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <QuickAction href="/admin/contenus" icon={Video} title="Contenus" description="Ajouter ou modifier vos cours" gradient="from-emerald to-[#154d3b]" delay={0.05} />
+                    <QuickAction href="/admin/temoignages" icon={MessageSquareQuote} title="Témoignages" description="Gérer les avis clients" gradient="from-honey to-[#a37a33]" delay={0.1} />
+                    <QuickAction href="/admin/publicites" icon={Megaphone} title="Publicité" description="Gérer les popups promo" gradient="from-terracotta to-[#a3542e]" delay={0.15} />
+                    <QuickAction href="/admin/newsletter" icon={Mail} title="Newsletter" description="Communiquer avec les abonnés" gradient="from-cocoa to-[#171009]" delay={0.2} />
                 </div>
             </div>
 
-            {/* Recent */}
-            <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                <div className="rounded-2xl border border-cocoa/10 bg-white p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h3 className="font-semibold text-cocoa">Contenus récents</h3>
-                        <a href="/admin/contenus" className="text-sm font-medium text-emerald hover:text-cocoa">Voir tout</a>
+            <div className="mt-10 grid gap-5 lg:grid-cols-2">
+                <AdminPanel
+                    title="Contenus récents"
+                    action={
+                        <a href="/admin/contenus" className="group flex items-center gap-1 text-xs font-semibold text-emerald transition hover:text-cocoa">
+                            Voir tout
+                            <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                        </a>
+                    }
+                >
+                    <div className="p-3">
+                        {contents.length === 0 ? (
+                            <p className="py-10 text-center text-sm text-cocoa/40">Aucun contenu pour le moment</p>
+                        ) : (
+                            contents.slice(0, 5).map((c, i) => (
+                                <RecentItem key={c.id} title={c.title} subtitle={c.category?.name || 'Sans catégorie'} status={c.is_published ? 'published' : 'draft'} index={i} />
+                            ))
+                        )}
                     </div>
-                    {contents.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-cocoa/50">Aucun contenu</p>
-                    ) : (
-                        <div className="space-y-1">
-                            {contents.slice(0, 5).map((c) => (
-                                <RecentItem 
-                                    key={c.id} 
-                                    title={c.title} 
-                                    subtitle={c.category?.name || 'Sans catégorie'} 
-                                    status={c.is_published ? 'published' : 'draft'} 
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-                <div className="rounded-2xl border border-cocoa/10 bg-white p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                        <h3 className="font-semibold text-cocoa">Témoignages récents</h3>
-                        <a href="/admin/temoignages" className="text-sm font-medium text-emerald hover:text-cocoa">Voir tout</a>
+                </AdminPanel>
+
+                <AdminPanel
+                    title="Témoignages récents"
+                    action={
+                        <a href="/admin/temoignages" className="group flex items-center gap-1 text-xs font-semibold text-emerald transition hover:text-cocoa">
+                            Voir tout
+                            <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                        </a>
+                    }
+                >
+                    <div className="p-3">
+                        {testimonials.length === 0 ? (
+                            <p className="py-10 text-center text-sm text-cocoa/40">Aucun témoignage pour le moment</p>
+                        ) : (
+                            testimonials.slice(0, 5).map((t, i) => (
+                                <RecentItem key={t.id} title={t.name} subtitle={t.role || 'Sans rôle'} status={t.is_published ? 'published' : 'draft'} index={i} />
+                            ))
+                        )}
                     </div>
-                    {testimonials.length === 0 ? (
-                        <p className="py-8 text-center text-sm text-cocoa/50">Aucun témoignage</p>
-                    ) : (
-                        <div className="space-y-1">
-                            {testimonials.slice(0, 5).map((t) => (
-                                <RecentItem 
-                                    key={t.id} 
-                                    title={t.name} 
-                                    subtitle={t.role || 'Sans rôle'} 
-                                    status={t.is_published ? 'published' : 'draft'} 
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                </AdminPanel>
             </div>
         </>
     );
 }
 
-function ClientDashboard({ stats, name }: { stats: Stats; name: string }) {
+function ClientDashboard({ name }: { name: string }) {
     return (
         <>
-            {/* Welcome */}
-            <div className="rounded-2xl bg-gradient-to-r from-emerald to-emerald/80 p-8 text-sand">
-                <h2 className="text-2xl font-semibold">Bienvenue dans ton espace, {name.split(' ')[0]} !</h2>
-                <p className="mt-2 max-w-lg text-sand/80">
-                    Accède à tes formations, suis ta progression et continue ton parcours d'élévation.
-                </p>
-                <a
-                    href="#"
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-medium text-emerald transition hover:bg-sand"
-                >
-                    <Video size={16} />
-                    Voir mes cours
-                </a>
+            <HeroBanner name={name} stats={{} as Stats} isAdmin={false} />
+
+            <div className="mt-8 grid gap-5 sm:grid-cols-3">
+                <AdminStatCard icon={Video} label="Cours suivis" value={0} accent="emerald" />
+                <AdminStatCard icon={BadgeCheck} label="Cours terminés" value={0} accent="honey" />
+                <AdminStatCard icon={TrendingUp} label="Progression" value="0%" accent="terracotta" />
             </div>
 
-            {/* Stats */}
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl border border-cocoa/10 bg-white p-6 text-center">
-                    <div className="text-3xl font-bold text-emerald">0</div>
-                    <div className="text-sm text-cocoa/50">Cours suivis</div>
+            <div className="mt-10">
+                <div className="mb-5 flex items-center gap-3">
+                    <h2 className="ivoire-serif text-xl text-cocoa">Que veux-tu faire ?</h2>
+                    <span className="h-px flex-1 bg-gradient-to-r from-cocoa/15 to-transparent" />
                 </div>
-                <div className="rounded-2xl border border-cocoa/10 bg-white p-6 text-center">
-                    <div className="text-3xl font-bold text-honey">0</div>
-                    <div className="text-sm text-cocoa/50">Cours terminés</div>
-                </div>
-                <div className="rounded-2xl border border-cocoa/10 bg-white p-6 text-center">
-                    <div className="text-3xl font-bold text-cocoa">0%</div>
-                    <div className="text-sm text-cocoa/50">Progression</div>
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="mt-8">
-                <h2 className="mb-4 text-lg font-semibold text-cocoa">Que veux-tu faire ?</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <QuickAction href="#" icon={Video} title="Explorer les cours" description="Découvre les formations disponibles" color="bg-emerald" />
-                    <QuickAction href="#" icon={Settings} title="Mon profil" description="Gérer mes informations" color="bg-cocoa" />
+                    <QuickAction href="/contenus" icon={Video} title="Explorer les cours" description="Découvre les formations disponibles" gradient="from-emerald to-[#154d3b]" />
+                    <QuickAction href="#" icon={Settings} title="Mon profil" description="Gérer mes informations" gradient="from-cocoa to-[#171009]" delay={0.1} />
                 </div>
             </div>
 
-            {/* Placeholder */}
-            <div className="mt-8 rounded-2xl border border-cocoa/10 bg-white p-12 text-center">
-                <Calendar size={48} className="mx-auto text-cocoa/20" />
-                <h3 className="mt-4 font-semibold text-cocoa">Ton parcours commence ici</h3>
+            <motion.div
+                {...rise}
+                transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className="mt-10 rounded-2xl border border-dashed border-cocoa/15 bg-white/60 p-12 text-center backdrop-blur-sm"
+            >
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald/10">
+                    <Calendar size={28} className="text-emerald" />
+                </div>
+                <h3 className="ivoire-serif mt-4 text-xl text-cocoa">Ton parcours commence ici</h3>
                 <p className="mt-2 text-sm text-cocoa/50">Inscris-toi à un cours pour commencer ton élévation</p>
                 <a
-                    href="#"
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald px-5 py-2.5 text-sm font-medium text-sand transition hover:bg-cocoa"
+                    href="/contenus"
+                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald px-6 py-2.5 text-sm font-medium text-sand shadow-lg shadow-emerald/25 transition hover:bg-cocoa"
                 >
                     Voir les cours disponibles
+                    <ArrowRight size={15} />
                 </a>
-            </div>
+            </motion.div>
         </>
     );
 }
 
 export default function Dashboard() {
     const { stats, testimonials = [], contents = [], isAdmin, auth } = usePage<PageProps>().props;
+    const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 
     return (
         <>
             <Head title={isAdmin ? 'Dashboard — ÉLÉVATION' : 'Mon espace — ÉLÉVATION'} />
-            <div className="min-h-screen bg-[#f8f6f2]">
-                <Sidebar isAdmin={isAdmin} />
-                <div className="lg:pl-[260px]">
-                    <Header name={auth.user.name} isAdmin={isAdmin} />
-                    <main className="p-6 lg:p-8">
-                        {isAdmin ? (
-                            <AdminDashboard stats={stats} testimonials={testimonials} contents={contents} />
-                        ) : (
-                            <ClientDashboard stats={stats} name={auth.user.name} />
-                        )}
-                    </main>
-                </div>
-            </div>
+            <AdminShell
+                current="/espace"
+                title={isAdmin ? 'Dashboard' : 'Mon espace'}
+                subtitle={today.charAt(0).toUpperCase() + today.slice(1)}
+                user={auth.user}
+            >
+                {isAdmin ? (
+                    <AdminDashboard stats={stats} testimonials={testimonials} contents={contents} name={auth.user.name} />
+                ) : (
+                    <ClientDashboard name={auth.user.name} />
+                )}
+            </AdminShell>
         </>
     );
 }

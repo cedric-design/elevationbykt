@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\CollaboratorController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -73,6 +74,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('newsletter/{newsletter}/send', [NewsletterController::class, 'send'])->name('newsletter.send');
     Route::delete('newsletter/{newsletter}', [NewsletterController::class, 'destroy'])->name('newsletter.destroy');
     Route::delete('subscribers/{subscriber}', [NewsletterController::class, 'destroySubscriber'])->name('subscribers.destroy');
+    
+    Route::get('publicites', [AdvertisementController::class, 'index'])->name('advertisements.index');
+    Route::post('publicites', [AdvertisementController::class, 'store'])->name('advertisements.store');
+    Route::patch('publicites/{advertisement}', [AdvertisementController::class, 'update'])->name('advertisements.update');
+    Route::patch('publicites/{advertisement}/toggle', [AdvertisementController::class, 'toggleActive'])->name('advertisements.toggle');
+    Route::delete('publicites/{advertisement}', [AdvertisementController::class, 'destroy'])->name('advertisements.destroy');
 });
 
 require __DIR__.'/settings.php';

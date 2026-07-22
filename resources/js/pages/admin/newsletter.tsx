@@ -1,15 +1,8 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { FormEventHandler, useState, useRef, useCallback } from 'react';
+import { FormEventHandler, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LayoutDashboard,
-    MessageSquareQuote,
-    Video,
     Users,
-    UsersRound,
-    Mail,
-    LogOut,
-    ChevronRight,
     Plus,
     Trash2,
     Send,
@@ -21,8 +14,9 @@ import {
     List,
     Link2,
     AlertTriangle,
+    Mail,
 } from 'lucide-react';
-import ElevationLogo from '@/components/ivoire/elevation-logo';
+import { AdminShell, AdminStatCard, AdminPanel, AdminEmpty } from '@/components/admin/admin-shell';
 
 function ConfirmModal({ 
     open, 
@@ -121,101 +115,11 @@ interface PageProps {
     [key: string]: unknown;
 }
 
-const NAV = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
-    { icon: Video, label: 'Contenus', href: '/admin/contenus' },
-    { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
-    { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
-    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
-    { icon: Mail, label: 'Newsletter', href: '/admin/newsletter', active: true },
-];
-
 const TEMPLATES = [
     { id: 'default', name: 'Classique', desc: 'Design épuré avec branding ÉLÉVATION' },
     { id: 'minimal', name: 'Minimal', desc: 'Texte sobre, style éditorial' },
     { id: 'elegant', name: 'Élégant', desc: 'Fond sombre, touches dorées' },
 ];
-
-function Sidebar({ user }: { user: { name: string } }) {
-    return (
-        <aside className="fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-cocoa/10 bg-cocoa text-sand">
-            <div className="flex h-16 items-center gap-3 border-b border-sand/10 px-5">
-                <ElevationLogo size={32} />
-                <span className="text-lg font-semibold tracking-wide">ÉLÉVATION</span>
-            </div>
-            <nav className="flex-1 overflow-y-auto p-4">
-                <ul className="space-y-1">
-                    {NAV.map((item) => (
-                        <li key={item.href}>
-                            <a
-                                href={item.href}
-                                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm transition ${
-                                    item.active ? 'bg-emerald text-sand' : 'text-sand/70 hover:bg-sand/10 hover:text-sand'
-                                }`}
-                            >
-                                <item.icon size={18} />
-                                {item.label}
-                            </a>
-                        </li>
-                    ))}
-                </ul>
-            </nav>
-            <div className="border-t border-sand/10 p-4">
-                <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald text-sm font-semibold">
-                        {user.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 truncate">
-                        <div className="truncate text-sm font-medium">{user.name}</div>
-                        <div className="text-xs text-sand/50">Administrateur</div>
-                    </div>
-                </div>
-                <a
-                    href="/logout"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        router.post('/logout');
-                    }}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-sand/60 transition hover:bg-sand/10 hover:text-sand"
-                >
-                    <LogOut size={16} />
-                    Déconnexion
-                </a>
-            </div>
-        </aside>
-    );
-}
-
-function Topbar({ title }: { title: string }) {
-    return (
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-cocoa/10 bg-sand/80 px-6 backdrop-blur-md">
-            <div className="flex items-center gap-2 text-sm text-cocoa/50">
-                <a href="/espace" className="hover:text-emerald">Dashboard</a>
-                <ChevronRight size={14} />
-                <span className="font-medium text-cocoa">{title}</span>
-            </div>
-        </header>
-    );
-}
-
-function StatCard({ icon: Icon, label, value, color }: { icon: typeof Mail; label: string; value: number; color: string }) {
-    return (
-        <motion.div
-            whileHover={{ y: -4 }}
-            className={`rounded-2xl border border-cocoa/10 bg-white p-5 shadow-sm`}
-        >
-            <div className="flex items-center gap-4">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>
-                    <Icon size={22} className="text-white" />
-                </div>
-                <div>
-                    <div className="text-2xl font-bold text-cocoa">{value}</div>
-                    <div className="text-xs text-cocoa/50">{label}</div>
-                </div>
-            </div>
-        </motion.div>
-    );
-}
 
 function WysiwygEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -429,18 +333,14 @@ function NewslettersTable({ newsletters }: { newsletters: Newsletter[] }) {
     };
 
     if (newsletters.length === 0) {
-        return (
-            <div className="rounded-2xl border border-cocoa/10 bg-white p-12 text-center">
-                <Mail size={48} className="mx-auto text-cocoa/20" />
-                <p className="mt-4 text-cocoa/50">Aucune newsletter créée</p>
-            </div>
-        );
+        return <AdminEmpty icon={Mail} title="Aucune newsletter créée" />;
     }
 
     return (
         <>
-            <div className="overflow-hidden rounded-2xl border border-cocoa/10 bg-white">
-                <table className="w-full">
+            <AdminPanel>
+                <div className="overflow-x-auto">
+                    <table className="w-full">
                     <thead>
                         <tr className="border-b border-cocoa/10 bg-sand/30">
                             <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-cocoa/50">Objet</th>
@@ -502,7 +402,8 @@ function NewslettersTable({ newsletters }: { newsletters: Newsletter[] }) {
                         ))}
                     </tbody>
                 </table>
-            </div>
+                </div>
+            </AdminPanel>
 
             <ConfirmModal
                 open={!!sendTarget}
@@ -566,17 +467,13 @@ function SubscribersTable({ subscribers }: { subscribers: Subscriber[] }) {
     };
 
     if (subscribers.length === 0) {
-        return (
-            <div className="rounded-2xl border border-cocoa/10 bg-white p-12 text-center">
-                <Users size={48} className="mx-auto text-cocoa/20" />
-                <p className="mt-4 text-cocoa/50">Aucun abonné</p>
-            </div>
-        );
+        return <AdminEmpty icon={Users} title="Aucun abonné" />;
     }
 
     return (
-        <div className="overflow-hidden rounded-2xl border border-cocoa/10 bg-white">
-            <table className="w-full">
+        <AdminPanel>
+            <div className="overflow-x-auto">
+                <table className="w-full">
                 <thead>
                     <tr className="border-b border-cocoa/10 bg-sand/30">
                         <th className="px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-cocoa/50">Email</th>
@@ -625,7 +522,8 @@ function SubscribersTable({ subscribers }: { subscribers: Subscriber[] }) {
                     ))}
                 </tbody>
             </table>
-        </div>
+            </div>
+        </AdminPanel>
     );
 }
 
@@ -637,62 +535,58 @@ export default function NewsletterPage() {
     return (
         <>
             <Head title="Newsletter — Admin" />
-            <div className="tpl-ivoire min-h-screen bg-sand">
-                <Sidebar user={auth.user} />
-                <div className="ml-64">
-                    <Topbar title="Newsletter" />
-                    <main className="p-6">
-                        {/* Stats */}
-                        <div className="mb-8 grid gap-4 sm:grid-cols-3">
-                            <StatCard icon={Mail} label="Total abonnés" value={stats.total} color="bg-emerald" />
-                            <StatCard icon={Check} label="Abonnés actifs" value={stats.active} color="bg-honey" />
-                            <StatCard icon={X} label="Désabonnés" value={stats.unsubscribed} color="bg-terracotta" />
-                        </div>
-
-                        {/* Tabs & Actions */}
-                        <div className="mb-6 flex items-center justify-between">
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setTab('newsletters')}
-                                    className={`rounded-xl px-5 py-2.5 text-sm font-medium transition ${
-                                        tab === 'newsletters'
-                                            ? 'bg-emerald text-sand'
-                                            : 'border border-cocoa/15 text-cocoa/70 hover:bg-white'
-                                    }`}
-                                >
-                                    Newsletters ({newsletters.length})
-                                </button>
-                                <button
-                                    onClick={() => setTab('subscribers')}
-                                    className={`rounded-xl px-5 py-2.5 text-sm font-medium transition ${
-                                        tab === 'subscribers'
-                                            ? 'bg-emerald text-sand'
-                                            : 'border border-cocoa/15 text-cocoa/70 hover:bg-white'
-                                    }`}
-                                >
-                                    Abonnés ({subscribers.length})
-                                </button>
-                            </div>
-                            {tab === 'newsletters' && (
-                                <button
-                                    onClick={() => setShowForm(true)}
-                                    className="flex items-center gap-2 rounded-xl bg-emerald px-5 py-2.5 text-sm font-medium text-sand shadow-lg shadow-emerald/20 transition hover:bg-emerald/90"
-                                >
-                                    <Plus size={18} />
-                                    Nouvelle newsletter
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Content */}
-                        {tab === 'newsletters' ? (
-                            <NewslettersTable newsletters={newsletters} />
-                        ) : (
-                            <SubscribersTable subscribers={subscribers} />
-                        )}
-                    </main>
+            <AdminShell
+                current="/admin/newsletter"
+                title="Newsletter"
+                subtitle="Gérez vos campagnes et abonnés"
+                user={auth.user}
+                actions={
+                    tab === 'newsletters' ? (
+                        <button
+                            onClick={() => setShowForm(true)}
+                            className="flex items-center gap-2 rounded-full bg-emerald px-5 py-2.5 text-sm font-medium text-sand shadow-lg shadow-emerald/25 transition hover:bg-cocoa"
+                        >
+                            <Plus size={18} />
+                            Nouvelle newsletter
+                        </button>
+                    ) : undefined
+                }
+            >
+                <div className="mb-8 grid gap-4 sm:grid-cols-3">
+                    <AdminStatCard icon={Mail} label="Total abonnés" value={stats.total} accent="emerald" />
+                    <AdminStatCard icon={Check} label="Abonnés actifs" value={stats.active} accent="honey" />
+                    <AdminStatCard icon={X} label="Désabonnés" value={stats.unsubscribed} accent="terracotta" />
                 </div>
-            </div>
+
+                <div className="mb-6 flex gap-2">
+                    <button
+                        onClick={() => setTab('newsletters')}
+                        className={`rounded-xl px-5 py-2.5 text-sm font-medium transition ${
+                            tab === 'newsletters'
+                                ? 'bg-emerald text-sand'
+                                : 'border border-cocoa/15 text-cocoa/70 hover:bg-white'
+                        }`}
+                    >
+                        Newsletters ({newsletters.length})
+                    </button>
+                    <button
+                        onClick={() => setTab('subscribers')}
+                        className={`rounded-xl px-5 py-2.5 text-sm font-medium transition ${
+                            tab === 'subscribers'
+                                ? 'bg-emerald text-sand'
+                                : 'border border-cocoa/15 text-cocoa/70 hover:bg-white'
+                        }`}
+                    >
+                        Abonnés ({subscribers.length})
+                    </button>
+                </div>
+
+                {tab === 'newsletters' ? (
+                    <NewslettersTable newsletters={newsletters} />
+                ) : (
+                    <SubscribersTable subscribers={subscribers} />
+                )}
+            </AdminShell>
 
             <AnimatePresence>
                 {showForm && <NewsletterForm onClose={() => setShowForm(false)} />}

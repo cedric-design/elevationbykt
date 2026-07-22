@@ -2,14 +2,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LayoutDashboard,
-    MessageSquareQuote,
     Video,
-    Users,
-    UsersRound,
-    Mail,
-    LogOut,
-    ChevronRight,
     Plus,
     Trash2,
     Eye,
@@ -21,7 +14,7 @@ import {
     ExternalLink,
     AlertTriangle,
 } from 'lucide-react';
-import ElevationLogo from '@/components/ivoire/elevation-logo';
+import { AdminShell, AdminStatCard } from '@/components/admin/admin-shell';
 
 function ConfirmModal({ 
     open, 
@@ -116,76 +109,6 @@ interface PageProps {
     categories: Category[];
     auth: { user: { name: string; email: string; role: string } };
     [key: string]: unknown;
-}
-
-const NAV = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
-    { icon: Video, label: 'Contenus', href: '/admin/contenus', active: true },
-    { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
-    { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
-    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
-    { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
-];
-
-function Sidebar() {
-    return (
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col bg-cocoa lg:flex">
-            <div className="flex h-16 items-center gap-3 px-6">
-                <ElevationLogo size={32} className="brightness-0 invert" />
-                <span className="text-lg font-semibold text-sand">ÉLÉVATION</span>
-            </div>
-            <nav className="mt-4 flex-1 space-y-1 px-3">
-                {NAV.map(({ icon: Icon, label, href, active }) => (
-                    <a
-                        key={label}
-                        href={href}
-                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                            active ? 'bg-emerald text-sand' : 'text-sand/60 hover:bg-white/5 hover:text-sand'
-                        }`}
-                    >
-                        <Icon size={18} />
-                        {label}
-                    </a>
-                ))}
-            </nav>
-            <div className="border-t border-white/10 p-3">
-                <a href="/" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-white/5 hover:text-sand">
-                    <ChevronRight size={18} />
-                    Voir le site
-                </a>
-                <button onClick={() => router.post('/logout')} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-terracotta/20 hover:text-terracotta">
-                    <LogOut size={18} />
-                    Déconnexion
-                </button>
-            </div>
-        </aside>
-    );
-}
-
-function Header({ name, onAdd }: { name: string; onAdd: () => void }) {
-    return (
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-cocoa/10 bg-white/80 px-6 backdrop-blur-md lg:px-8">
-            <div>
-                <h1 className="text-xl font-semibold text-cocoa">Contenus & Cours</h1>
-                <p className="text-sm text-cocoa/50">Gérez vos vidéos et formations</p>
-            </div>
-            <div className="flex items-center gap-4">
-                <button
-                    onClick={onAdd}
-                    className="flex items-center gap-2 rounded-xl bg-emerald px-4 py-2.5 text-sm font-medium text-sand shadow-sm transition hover:bg-cocoa"
-                >
-                    <Plus size={16} />
-                    Ajouter un contenu
-                </button>
-                <button className="relative rounded-full border border-cocoa/10 p-2.5 text-cocoa/60 transition hover:bg-cocoa/5 hover:text-cocoa">
-                    <Bell size={18} />
-                </button>
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald to-emerald/70 grid place-items-center text-sand font-semibold">
-                    {name.charAt(0)}
-                </div>
-            </div>
-        </header>
-    );
 }
 
 function Modal({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
@@ -766,32 +689,31 @@ export default function AdminContents() {
     return (
         <>
             <Head title="Contenus — ÉLÉVATION" />
-            <div className="min-h-screen bg-[#f8f6f2]">
-                <Sidebar />
-                <div className="lg:pl-[260px]">
-                    <Header name={auth.user.name} onAdd={openNew} />
-                    <main className="p-6 lg:p-8">
-                        {/* Stats */}
-                        <div className="mb-6 grid gap-4 sm:grid-cols-3">
-                            <div className="rounded-xl border border-cocoa/10 bg-white p-5">
-                                <div className="text-2xl font-bold text-cocoa">{contents.length}</div>
-                                <div className="text-sm text-cocoa/50">Total contenus</div>
-                            </div>
-                            <div className="rounded-xl border border-cocoa/10 bg-white p-5">
-                                <div className="text-2xl font-bold text-emerald">{contents.filter(c => c.type === 'free').length}</div>
-                                <div className="text-sm text-cocoa/50">Gratuits</div>
-                            </div>
-                            <div className="rounded-xl border border-cocoa/10 bg-white p-5">
-                                <div className="text-2xl font-bold text-honey">{contents.filter(c => c.type === 'paid').length}</div>
-                                <div className="text-sm text-cocoa/50">Payants</div>
-                            </div>
-                        </div>
-
-                        {/* Table */}
-                        <ContentsTable contents={contents} onEdit={openEdit} />
-                    </main>
+            <AdminShell
+                current="/admin/contenus"
+                title="Contenus & Cours"
+                subtitle="Gérez vos vidéos et formations"
+                user={auth.user}
+                actions={
+                    <button
+                        onClick={openNew}
+                        className="flex items-center gap-2 rounded-full bg-emerald px-5 py-2.5 text-sm font-medium text-sand shadow-lg shadow-emerald/25 transition hover:bg-cocoa"
+                    >
+                        <Plus size={16} />
+                        Ajouter un contenu
+                    </button>
+                }
+            >
+                {/* Stats */}
+                <div className="mb-6 grid gap-4 sm:grid-cols-3">
+                    <AdminStatCard icon={Video} label="Total contenus" value={contents.length} accent="cocoa" />
+                    <AdminStatCard icon={Eye} label="Gratuits" value={contents.filter(c => c.type === 'free').length} accent="emerald" />
+                    <AdminStatCard icon={ExternalLink} label="Payants" value={contents.filter(c => c.type === 'paid').length} accent="honey" />
                 </div>
-            </div>
+
+                {/* Table */}
+                <ContentsTable contents={contents} onEdit={openEdit} />
+            </AdminShell>
 
             {/* Content Modal */}
             <Modal open={modalOpen} onClose={closeModal}>

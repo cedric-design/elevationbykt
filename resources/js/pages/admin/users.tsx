@@ -1,13 +1,6 @@
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
-    LayoutDashboard,
-    MessageSquareQuote,
-    Video,
-    Users,
-    Mail,
-    LogOut,
-    ChevronRight,
     Trash2,
     CheckCircle,
     AlertTriangle,
@@ -16,20 +9,20 @@ import {
     UsersRound,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ElevationLogo from '@/components/ivoire/elevation-logo';
+import { AdminShell, AdminStatCard, AdminPanel, AdminEmpty } from '@/components/admin/admin-shell';
 
-function ConfirmModal({ 
-    open, 
-    onClose, 
-    onConfirm, 
-    title, 
+function ConfirmModal({
+    open,
+    onClose,
+    onConfirm,
+    title,
     message,
     confirmText = 'Confirmer',
     variant = 'danger',
     loading = false,
-}: { 
-    open: boolean; 
-    onClose: () => void; 
+}: {
+    open: boolean;
+    onClose: () => void;
     onConfirm: () => void;
     title: string;
     message: string;
@@ -39,7 +32,7 @@ function ConfirmModal({
 }) {
     if (!open) return null;
 
-    const colors = variant === 'danger' 
+    const colors = variant === 'danger'
         ? { bg: 'bg-terracotta/10', icon: 'text-terracotta', btn: 'bg-terracotta hover:bg-terracotta/90' }
         : { bg: 'bg-honey/10', icon: 'text-honey', btn: 'bg-honey hover:bg-honey/90 text-cocoa' };
 
@@ -108,81 +101,6 @@ interface PageProps {
     stats: Stats;
     auth: { user: { name: string; email: string; id: number } };
     [key: string]: unknown;
-}
-
-const NAV = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
-    { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
-    { icon: Video, label: 'Contenus', href: '/admin/contenus' },
-    { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
-    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs', active: true },
-    { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
-];
-
-function Sidebar({ user }: { user: { name: string } }) {
-    return (
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] flex-col bg-cocoa lg:flex">
-            <div className="flex h-16 items-center gap-3 px-6">
-                <ElevationLogo size={32} className="brightness-0 invert" />
-                <span className="text-lg font-semibold text-sand">ÉLÉVATION</span>
-            </div>
-            <nav className="mt-4 flex-1 space-y-1 px-3">
-                {NAV.map(({ icon: Icon, label, href, active }) => (
-                    <a
-                        key={label}
-                        href={href}
-                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                            active ? 'bg-emerald text-sand' : 'text-sand/60 hover:bg-white/5 hover:text-sand'
-                        }`}
-                    >
-                        <Icon size={18} />
-                        {label}
-                    </a>
-                ))}
-            </nav>
-            <div className="border-t border-white/10 p-3">
-                <div className="mb-3 flex items-center gap-3 px-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald text-sm font-semibold">
-                        {user.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 truncate">
-                        <div className="truncate text-sm font-medium text-sand">{user.name}</div>
-                        <div className="text-xs text-sand/50">Administrateur</div>
-                    </div>
-                </div>
-                <a href="/" className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-white/5 hover:text-sand">
-                    <ChevronRight size={18} />
-                    Voir le site
-                </a>
-                <button
-                    onClick={() => router.post('/logout')}
-                    className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-sand/60 transition hover:bg-terracotta/20 hover:text-terracotta"
-                >
-                    <LogOut size={18} />
-                    Déconnexion
-                </button>
-            </div>
-        </aside>
-    );
-}
-
-function StatCard({ icon: Icon, label, value, color }: { icon: typeof Users; label: string; value: number; color: string }) {
-    return (
-        <motion.div
-            whileHover={{ y: -4 }}
-            className="rounded-2xl border border-cocoa/10 bg-white p-5 shadow-sm"
-        >
-            <div className="flex items-center gap-4">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${color}`}>
-                    <Icon size={22} className="text-white" />
-                </div>
-                <div>
-                    <div className="text-2xl font-bold text-cocoa">{value}</div>
-                    <div className="text-xs text-cocoa/50">{label}</div>
-                </div>
-            </div>
-        </motion.div>
-    );
 }
 
 function UserRow({ user }: { user: User }) {
@@ -279,7 +197,7 @@ function UserRow({ user }: { user: User }) {
                 onClose={() => setShowToggle(false)}
                 onConfirm={confirmToggle}
                 title={user.is_active ? 'Désactiver cet utilisateur ?' : 'Activer cet utilisateur ?'}
-                message={user.is_active 
+                message={user.is_active
                     ? `${user.name} ne pourra plus se connecter à son compte.`
                     : `${user.name} pourra à nouveau se connecter à son compte.`
                 }
@@ -297,54 +215,41 @@ export default function UsersPage() {
     return (
         <>
             <Head title="Utilisateurs — ÉLÉVATION" />
-            <div className="min-h-screen bg-[#f8f6f2]">
-                <Sidebar user={auth.user} />
-                <div className="lg:pl-[260px]">
-                    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-cocoa/10 bg-white/80 px-6 backdrop-blur-md lg:px-8">
-                        <div>
-                            <h1 className="text-xl font-semibold text-cocoa">Utilisateurs</h1>
-                            <p className="text-sm text-cocoa/50">Gérer les comptes clients</p>
-                        </div>
-                    </header>
-
-                    <main className="p-6 lg:p-8">
-                        {/* Stats */}
-                        <div className="mb-8 grid gap-4 sm:grid-cols-3">
-                            <StatCard icon={UsersRound} label="Total clients" value={stats.total} color="bg-emerald" />
-                            <StatCard icon={UserCheck} label="Actifs" value={stats.active} color="bg-honey" />
-                            <StatCard icon={UserX} label="Désactivés" value={stats.inactive} color="bg-terracotta" />
-                        </div>
-
-                        <div className="rounded-2xl border border-cocoa/10 bg-white">
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead>
-                                        <tr className="border-b border-cocoa/10 text-left text-xs font-medium uppercase tracking-wider text-cocoa/50">
-                                            <th className="px-6 py-4">Utilisateur</th>
-                                            <th className="px-6 py-4">Téléphone</th>
-                                            <th className="px-6 py-4">Inscrit le</th>
-                                            <th className="px-6 py-4">Statut</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {users.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={5} className="px-6 py-12 text-center text-cocoa/50">
-                                                    <UsersRound size={40} className="mx-auto mb-3 opacity-30" />
-                                                    <p>Aucun utilisateur inscrit</p>
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            users.map((u) => <UserRow key={u.id} user={u} />)
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </main>
+            <AdminShell
+                current="/admin/utilisateurs"
+                title="Utilisateurs"
+                subtitle="Gérer les comptes clients"
+                user={auth.user}
+            >
+                <div className="mb-8 grid gap-4 sm:grid-cols-3">
+                    <AdminStatCard icon={UsersRound} label="Total clients" value={stats.total} accent="emerald" />
+                    <AdminStatCard icon={UserCheck} label="Actifs" value={stats.active} accent="honey" />
+                    <AdminStatCard icon={UserX} label="Désactivés" value={stats.inactive} accent="terracotta" />
                 </div>
-            </div>
+
+                <AdminPanel>
+                    {users.length === 0 ? (
+                        <AdminEmpty icon={UsersRound} title="Aucun utilisateur inscrit" />
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="border-b border-cocoa/10 text-left text-xs font-medium uppercase tracking-wider text-cocoa/50">
+                                        <th className="px-6 py-4">Utilisateur</th>
+                                        <th className="px-6 py-4">Téléphone</th>
+                                        <th className="px-6 py-4">Inscrit le</th>
+                                        <th className="px-6 py-4">Statut</th>
+                                        <th className="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.map((u) => <UserRow key={u.id} user={u} />)}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </AdminPanel>
+            </AdminShell>
         </>
     );
 }
