@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\CourseAccessStatus;
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Models\ContactMessage;
 use App\Models\Content;
 use App\Models\Course;
+use App\Models\Event;
 use App\Models\Testimonial;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -32,6 +34,10 @@ class DashboardController extends Controller
             'contentsPublished' => Content::where('is_published', true)->count(),
             'courses' => Course::count(),
             'coursesPublished' => Course::where('is_published', true)->count(),
+            'contactMessages' => ContactMessage::count(),
+            'contactUnread' => ContactMessage::where('is_read', false)->count(),
+            'events' => Event::count(),
+            'eventsPublished' => Event::where('is_published', true)->count(),
             'visitorsToday' => 0,
             'revenue' => 0,
             'revenueTrend' => '+0%',
@@ -45,6 +51,27 @@ class DashboardController extends Controller
         if ($isAdmin) {
             $data['testimonials'] = Testimonial::latest()->take(5)->get();
             $data['courses'] = Course::withCount('modules')->latest()->take(5)->get(['id', 'title', 'is_published']);
+            $data['unreadMessages'] = ContactMessage::query()
+                ->where('is_read', false)
+                ->latest()
+                ->take(5)
+                ->get(['id', 'name', 'email', 'topic', 'message', 'created_at']);
+            $data['upcomingEvents'] = Event::query()
+                ->published()
+                ->upcoming()
+                ->withCount('registrations')
+                ->orderBy('starts_at')
+                ->take(4)
+                ->get()
+                ->map(fn (Event $event) => [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'type_label' => $event->type->label(),
+                    'place' => $event->place,
+                    'starts_at' => $event->starts_at?->toISOString(),
+                    'registrations_count' => $event->registrations_count,
+                    'access_mode_label' => $event->access_mode->label(),
+                ]);
         } else {
             $availableCourses = Course::query()
                 ->published()

@@ -2,14 +2,18 @@
 
 use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\CollaboratorController;
+use App\Http\Controllers\Admin\ContactMessageController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UploadController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CourseAccessController;
+use App\Http\Controllers\EventRegistrationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\SubscriberController;
@@ -24,6 +28,8 @@ Route::get('/contenus/cours/{slug}', HomeController::class)->name('cours.show');
 Route::get('/contenus/{slug}', HomeController::class)->name('contenu.show');
 Route::get('/galerie', HomeController::class)->name('galerie');
 Route::get('/contact', HomeController::class)->name('contact');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::post('/evenements/{event}/inscrire', [EventRegistrationController::class, 'store'])->name('events.register');
 Route::get('/connexion', HomeController::class)->name('connexion');
 Route::get('/inscription', HomeController::class)->name('inscription');
 
@@ -90,5 +96,19 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('publicites/{advertisement}', [AdvertisementController::class, 'update'])->name('advertisements.update');
     Route::patch('publicites/{advertisement}/toggle', [AdvertisementController::class, 'toggleActive'])->name('advertisements.toggle');
     Route::delete('publicites/{advertisement}', [AdvertisementController::class, 'destroy'])->name('advertisements.destroy');
+
+    Route::get('contact', [ContactMessageController::class, 'index'])->name('contact.index');
+    Route::patch('contact/{contact_message}/read', [ContactMessageController::class, 'markRead'])->name('contact.read');
+    Route::patch('contact/{contact_message}/unread', [ContactMessageController::class, 'markUnread'])->name('contact.unread');
+    Route::delete('contact/{contact_message}', [ContactMessageController::class, 'destroy'])->name('contact.destroy');
+
+    Route::get('evenements', [EventController::class, 'index'])->name('events.index');
+    Route::post('evenements', [EventController::class, 'store'])->name('events.store');
+    Route::patch('evenements/{event}', [EventController::class, 'update'])->name('events.update');
+    Route::patch('evenements/{event}/toggle', [EventController::class, 'togglePublish'])->name('events.toggle');
+    Route::delete('evenements/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+    Route::get('evenements/{event}/inscrits', [EventController::class, 'registrations'])->name('events.registrations');
+    Route::post('evenements/{event}/inscrits', [EventController::class, 'storeRegistration'])->name('events.registrations.store');
+    Route::delete('evenements/{event}/inscrits/{registration}', [EventController::class, 'destroyRegistration'])->name('events.registrations.destroy');
 });
 

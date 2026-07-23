@@ -11,7 +11,7 @@ export const IMG = {
 };
 
 export const HERO = {
-    image: IMG.hero,
+    image: '/kadhy-hero-studio.jpg',
     video: '/media/hero.mp4',
 };
 

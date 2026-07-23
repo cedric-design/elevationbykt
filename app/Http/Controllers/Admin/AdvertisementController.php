@@ -20,13 +20,22 @@ class AdvertisementController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'link' => $request->filled('link') ? $request->input('link') : null,
+            'starts_at' => $request->filled('starts_at') ? $request->input('starts_at') : null,
+            'ends_at' => $request->filled('ends_at') ? $request->input('ends_at') : null,
+        ]);
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'image' => ['required', 'string'],
             'link' => ['nullable', 'url', 'max:500'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'is_active' => ['boolean'],
         ]);
+
+        $validated['is_active'] = (bool) ($validated['is_active'] ?? true);
 
         Advertisement::create($validated);
 
@@ -37,13 +46,24 @@ class AdvertisementController extends Controller
 
     public function update(Request $request, Advertisement $advertisement): RedirectResponse
     {
+        $request->merge([
+            'link' => $request->filled('link') ? $request->input('link') : null,
+            'starts_at' => $request->filled('starts_at') ? $request->input('starts_at') : null,
+            'ends_at' => $request->filled('ends_at') ? $request->input('ends_at') : null,
+        ]);
+
         $validated = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
             'image' => ['sometimes', 'string'],
             'link' => ['nullable', 'url', 'max:500'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+            'is_active' => ['boolean'],
         ]);
+
+        if (array_key_exists('is_active', $validated)) {
+            $validated['is_active'] = (bool) $validated['is_active'];
+        }
 
         $advertisement->update($validated);
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\ContactMessage;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -36,6 +37,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+        $isAdmin = $user?->isAdmin() ?? false;
 
         return [
             ...parent::share($request),
@@ -43,7 +45,17 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user,
             ],
-            'isAdmin' => $user?->isAdmin() ?? false,
+            'isAdmin' => $isAdmin,
+            'adminNotifications' => $isAdmin
+                ? [
+                    'unread_count' => ContactMessage::where('is_read', false)->count(),
+                    'messages' => ContactMessage::query()
+                        ->where('is_read', false)
+                        ->latest()
+                        ->take(5)
+                        ->get(['id', 'name', 'email', 'topic', 'message', 'created_at']),
+                ]
+                : null,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

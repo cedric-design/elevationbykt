@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/react';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard,
@@ -10,11 +10,14 @@ import {
     UsersRound,
     Mail,
     Megaphone,
+    Inbox,
+    CalendarDays,
     LogOut,
     Bell,
     Globe,
     Menu,
     X,
+    ArrowRight,
     type LucideIcon,
 } from 'lucide-react';
 import ElevationLogo from '@/components/ivoire/elevation-logo';
@@ -23,6 +26,8 @@ const ADMIN_NAV = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
     { icon: BookOpen, label: 'Cours', href: '/admin/cours' },
     { icon: Video, label: 'Contenus', href: '/admin/contenus' },
+    { icon: CalendarDays, label: 'Événements', href: '/admin/evenements' },
+    { icon: Inbox, label: 'Messages', href: '/admin/contact' },
     { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
     { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
     { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
@@ -34,6 +39,28 @@ const CLIENT_NAV = [
     { icon: LayoutDashboard, label: 'Mon espace', href: '/espace' },
     { icon: BookOpen, label: 'Mes cours', href: '/espace' },
 ];
+
+const TOPIC_LABELS: Record<string, string> = {
+    partenariat: 'Partenariat',
+    presse: 'Presse',
+    evenement: 'Événement',
+    masterclass: 'Masterclass',
+    autre: 'Autre',
+};
+
+interface AdminNotificationMessage {
+    id: number;
+    name: string;
+    email: string;
+    topic: string;
+    message: string;
+    created_at: string;
+}
+
+interface AdminNotifications {
+    unread_count: number;
+    messages: AdminNotificationMessage[];
+}
 
 function NavLinks({ current, items, onNavigate }: { current: string; items: typeof ADMIN_NAV; onNavigate?: () => void }) {
     return (
@@ -170,15 +197,55 @@ export function AdminHeader({
     title: string;
     subtitle?: string;
     actions?: ReactNode;
-    user: { name: string };
+    user: { name: string; role?: string };
     isAdmin?: boolean;
     onMenu?: () => void;
 }) {
+    const { adminNotifications } = usePage<{ adminNotifications?: AdminNotifications | null }>().props;
+    const [notifOpen, setNotifOpen] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
+
+    const unread = adminNotifications?.unread_count ?? 0;
+    const messages = adminNotifications?.messages ?? [];
+    const initials = user.name
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((p) => p[0]?.toUpperCase() ?? '')
+        .join('');
+
+    useEffect(() => {
+        if (!notifOpen) return;
+
+        const onClick = (e: MouseEvent) => {
+            if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+                setNotifOpen(false);
+            }
+        };
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') setNotifOpen(false);
+        };
+
+        document.addEventListener('mousedown', onClick);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('mousedown', onClick);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, [notifOpen]);
+
+    const formatNotifDate = (iso: string) => {
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    };
+
     return (
         <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-cocoa/[0.06] bg-[#f7f3eb]/85 px-4 backdrop-blur-xl sm:px-6 lg:px-10">
             <div className="flex items-center gap-3">
                 {onMenu && (
                     <button
+                        type="button"
                         onClick={onMenu}
                         className="grid h-10 w-10 place-items-center rounded-xl border border-cocoa/10 bg-white text-cocoa/70 shadow-sm lg:hidden"
                     >
@@ -190,16 +257,102 @@ export function AdminHeader({
                     {subtitle && <p className="text-xs text-cocoa/45">{subtitle}</p>}
                 </div>
             </div>
+
             <div className="flex items-center gap-2 sm:gap-3">
                 {actions}
+
                 {isAdmin && (
-                    <button className="relative hidden h-11 w-11 place-items-center rounded-full border border-cocoa/10 bg-white text-cocoa/60 shadow-sm transition hover:border-emerald/30 hover:text-emerald sm:grid">
-                        <Bell size={17} />
-                        <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-terracotta ring-2 ring-white" />
-                    </button>
+                    <div className="relative" ref={notifRef}>
+                        <button
+                            type="button"
+                            onClick={() => setNotifOpen((v) => !v)}
+                            aria-label="Notifications"
+                            aria-expanded={notifOpen}
+                            className={`relative grid h-11 w-11 place-items-center rounded-full border bg-white text-cocoa/55 shadow-sm transition ${
+                                notifOpen
+                                    ? 'border-honey text-honey'
+                                    : 'border-cocoa/10 hover:border-honey/40 hover:text-honey'
+                            }`}
+                        >
+                            <Bell size={17} />
+                            {unread > 0 && (
+                                <span className="absolute -right-0.5 -top-0.5 grid min-w-[18px] place-items-center rounded-full bg-terracotta px-1 py-0.5 text-[10px] font-bold leading-none text-sand ring-2 ring-[#f7f3eb]">
+                                    {unread > 9 ? '9+' : unread}
+                                </span>
+                            )}
+                        </button>
+
+                        <AnimatePresence>
+                            {notifOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="absolute right-0 top-[calc(100%+10px)] z-50 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-cocoa/10 bg-white shadow-2xl shadow-cocoa/15"
+                                >
+                                    <div className="flex items-center justify-between border-b border-cocoa/8 px-4 py-3">
+                                        <div>
+                                            <p className="text-sm font-semibold text-cocoa">Notifications</p>
+                                            <p className="text-xs text-cocoa/45">
+                                                {unread > 0
+                                                    ? `${unread} message${unread > 1 ? 's' : ''} non lu${unread > 1 ? 's' : ''}`
+                                                    : 'Tout est à jour'}
+                                            </p>
+                                        </div>
+                                        <Inbox size={16} className="text-honey" />
+                                    </div>
+
+                                    <div className="max-h-[320px] overflow-y-auto">
+                                        {messages.length === 0 ? (
+                                            <div className="px-4 py-10 text-center">
+                                                <p className="text-sm text-cocoa/50">Aucun nouveau message</p>
+                                            </div>
+                                        ) : (
+                                            messages.map((msg) => (
+                                                <a
+                                                    key={msg.id}
+                                                    href="/admin/contact"
+                                                    onClick={() => setNotifOpen(false)}
+                                                    className="block border-b border-cocoa/5 px-4 py-3 transition hover:bg-sand/60"
+                                                >
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <p className="truncate text-sm font-medium text-cocoa">{msg.name}</p>
+                                                        <span className="shrink-0 rounded-full bg-honey/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-honey">
+                                                            {TOPIC_LABELS[msg.topic] || msg.topic}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-1 line-clamp-1 text-xs text-cocoa/55">{msg.message}</p>
+                                                    <p className="mt-1 text-[11px] text-cocoa/35">{formatNotifDate(msg.created_at)}</p>
+                                                </a>
+                                            ))
+                                        )}
+                                    </div>
+
+                                    <a
+                                        href="/admin/contact"
+                                        onClick={() => setNotifOpen(false)}
+                                        className="flex items-center justify-center gap-2 border-t border-cocoa/8 bg-sand/40 px-4 py-3 text-xs font-semibold text-cocoa transition hover:bg-honey/15 hover:text-honey"
+                                    >
+                                        Voir tous les messages
+                                        <ArrowRight size={13} />
+                                    </a>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 )}
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-emerald to-[#154d3b] font-semibold text-sand shadow-md shadow-emerald/20">
-                    {user.name.charAt(0).toUpperCase()}
+
+                <div className="flex items-center gap-2.5 rounded-full border border-cocoa/10 bg-white py-1.5 pl-1.5 pr-3 shadow-sm sm:pr-4">
+                    <div className="grid h-8 w-8 place-items-center rounded-full bg-cocoa text-[11px] font-semibold tracking-wide text-sand sm:h-9 sm:w-9 sm:text-xs">
+                        {initials || user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="hidden min-w-0 sm:block">
+                        <p className="truncate text-sm font-medium leading-tight text-cocoa">{user.name}</p>
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-cocoa/40">
+                            {isAdmin ? 'Admin' : 'Membre'}
+                        </p>
+                    </div>
                 </div>
             </div>
         </header>

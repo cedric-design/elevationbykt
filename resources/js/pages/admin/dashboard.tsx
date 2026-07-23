@@ -6,22 +6,20 @@ import {
     Video,
     BookOpen,
     Users,
-    Mail,
+    Inbox,
+    CalendarDays,
     TrendingUp,
-    DollarSign,
     UserCheck,
-    ArrowUpRight,
     ArrowRight,
-    Calendar,
-    Activity,
     Sparkles,
     BadgeCheck,
     Clock,
     ExternalLink,
     Send,
     Image as ImageIcon,
+    MapPin,
+    Megaphone,
 } from 'lucide-react';
-import ElevationLogo from '@/components/ivoire/elevation-logo';
 import { AdminShell, AdminStatCard, AdminPanel } from '@/components/admin/admin-shell';
 
 interface Testimonial {
@@ -37,6 +35,25 @@ interface CourseSummary {
     title: string;
     is_published: boolean;
     modules_count?: number;
+}
+
+interface UnreadMessage {
+    id: number;
+    name: string;
+    email: string;
+    topic: string;
+    message: string;
+    created_at: string;
+}
+
+interface UpcomingEvent {
+    id: number;
+    title: string;
+    type_label: string;
+    place: string;
+    starts_at: string | null;
+    registrations_count: number;
+    access_mode_label: string;
 }
 
 interface CourseAccessInfo {
@@ -78,6 +95,10 @@ interface Stats {
     contentsPublished: number;
     courses: number;
     coursesPublished: number;
+    contactMessages: number;
+    contactUnread: number;
+    events: number;
+    eventsPublished: number;
     visitorsToday: number;
     revenue: number;
     revenueTrend: string;
@@ -89,6 +110,8 @@ interface PageProps {
     stats: Stats;
     testimonials?: Testimonial[];
     courses?: CourseSummary[];
+    unreadMessages?: UnreadMessage[];
+    upcomingEvents?: UpcomingEvent[];
     availableCourses?: AvailableCourse[];
     myCourses?: MyCourse[];
     isAdmin: boolean;
@@ -96,116 +119,148 @@ interface PageProps {
     [key: string]: unknown;
 }
 
+const TOPIC_LABELS: Record<string, string> = {
+    partenariat: 'Partenariat',
+    presse: 'Presse',
+    evenement: 'Événement',
+    masterclass: 'Masterclass',
+    autre: 'Autre',
+};
+
 const rise = {
     initial: { opacity: 0, y: 18 },
     animate: { opacity: 1, y: 0 },
 };
 
+function formatShortDate(iso: string | null) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function SectionTitle({ title, href, linkLabel = 'Voir tout' }: { title: string; href?: string; linkLabel?: string }) {
+    return (
+        <div className="mb-5 flex items-end justify-between gap-4">
+            <h2 className="ivoire-serif text-2xl text-cocoa">{title}</h2>
+            {href && (
+                <a href={href} className="group inline-flex items-center gap-1 text-xs font-semibold text-cocoa/45 transition hover:text-honey">
+                    {linkLabel}
+                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+                </a>
+            )}
+        </div>
+    );
+}
+
 function HeroBanner({ name, stats, isAdmin }: { name: string; stats: Stats; isAdmin: boolean }) {
+    const firstName = name.split(' ')[0];
+
     return (
         <motion.div
             {...rise}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-emerald via-[#1b5f49] to-[#0f3226] p-8 text-sand shadow-2xl shadow-emerald/25 lg:p-10"
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="relative overflow-hidden rounded-[2rem] bg-cocoa text-sand"
         >
-            <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-honey/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-28 right-40 h-64 w-64 rounded-full bg-terracotta/20 blur-3xl" />
+            <div
+                className="pointer-events-none absolute inset-0 opacity-80"
+                style={{
+                    backgroundImage:
+                        'radial-gradient(ellipse 70% 80% at 100% 0%, rgba(199,154,75,0.35), transparent 55%), radial-gradient(ellipse 50% 60% at 0% 100%, rgba(31,107,82,0.25), transparent 50%)',
+                }}
+            />
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.04)_50%,transparent_60%)]" />
-            <div className="pointer-events-none absolute right-10 top-1/2 hidden -translate-y-1/2 opacity-[0.08] lg:block">
-                <ElevationLogo size={220} className="brightness-0 invert" />
-            </div>
 
-            <div className="relative">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-xs font-medium tracking-wide text-honey backdrop-blur-sm">
-                    <Sparkles size={13} />
-                    {isAdmin ? 'Tableau de bord' : 'Mon espace'}
-                </span>
-                <h2 className="ivoire-serif mt-4 max-w-lg text-3xl leading-tight lg:text-4xl">
-                    Bienvenue, {name.split(' ')[0]}.
-                </h2>
-                <p className="mt-2 max-w-md text-sm text-sand/70">
-                    {isAdmin
-                        ? "Voici un aperçu de l'activité d'ÉLÉVATION aujourd'hui."
-                        : "Accède à tes formations et continue ton parcours d'élévation."}
-                </p>
+            <div className="relative grid gap-8 p-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:p-10">
+                <div>
+                    <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-honey">
+                        <Sparkles size={12} />
+                        {isAdmin ? 'Espace admin' : 'Mon espace'}
+                    </span>
+                    <h2 className="ivoire-serif mt-4 text-4xl leading-[1.05] sm:text-5xl">
+                        Bonjour, {firstName}.
+                    </h2>
+                    <p className="mt-3 max-w-md text-sm leading-relaxed text-sand/65 sm:text-base">
+                        {isAdmin
+                            ? 'Pilote ÉLÉVATION : contenus, événements, messages et communauté — tout au même endroit.'
+                            : "Accède à tes formations et poursuis ton parcours d'élévation."}
+                    </p>
 
-                {isAdmin ? (
-                    <div className="mt-7 flex flex-wrap gap-x-10 gap-y-4">
-                        <div>
-                            <div className="ivoire-serif text-3xl">{stats.members}</div>
-                            <div className="mt-0.5 text-xs uppercase tracking-wider text-sand/55">Membres</div>
+                    {isAdmin && (
+                        <div className="mt-8 flex flex-wrap gap-3">
+                            <a
+                                href="/admin/evenements"
+                                className="inline-flex items-center gap-2 rounded-full bg-honey px-5 py-2.5 text-sm font-medium text-cocoa transition hover:bg-sand"
+                            >
+                                <CalendarDays size={15} />
+                                Créer un RDV
+                            </a>
+                            <a
+                                href="/admin/contact"
+                                className="inline-flex items-center gap-2 rounded-full border border-sand/25 px-5 py-2.5 text-sm font-medium text-sand transition hover:border-honey hover:text-honey"
+                            >
+                                <Inbox size={15} />
+                                Messages
+                                {(stats.contactUnread ?? 0) > 0 && (
+                                    <span className="rounded-full bg-honey/20 px-2 py-0.5 text-[10px] font-semibold text-honey">
+                                        {stats.contactUnread}
+                                    </span>
+                                )}
+                            </a>
                         </div>
-                        <div className="hidden w-px bg-white/15 sm:block" />
-                        <div>
-                            <div className="ivoire-serif text-3xl">{stats.courses}</div>
-                            <div className="mt-0.5 text-xs uppercase tracking-wider text-sand/55">Cours</div>
-                        </div>
-                        <div className="hidden w-px bg-white/15 sm:block" />
-                        <div>
-                            <div className="ivoire-serif text-3xl">{stats.contents}</div>
-                            <div className="mt-0.5 text-xs uppercase tracking-wider text-sand/55">Contenus</div>
-                        </div>
-                        <div className="hidden w-px bg-white/15 sm:block" />
-                        <div>
-                            <div className="ivoire-serif text-3xl">{stats.published}</div>
-                            <div className="mt-0.5 text-xs uppercase tracking-wider text-sand/55">Témoignages publiés</div>
-                        </div>
+                    )}
+
+                    {!isAdmin && (
+                        <a
+                            href="#mes-cours"
+                            className="mt-6 inline-flex items-center gap-2 rounded-full bg-honey px-6 py-3 text-sm font-semibold text-cocoa transition hover:bg-sand"
+                        >
+                            <BookOpen size={16} />
+                            Voir mes cours
+                        </a>
+                    )}
+                </div>
+
+                {isAdmin && (
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { label: 'Membres', value: stats.members },
+                            { label: 'Cours', value: stats.courses },
+                            { label: 'Événements', value: stats.eventsPublished ?? stats.events },
+                            { label: 'Messages', value: stats.contactUnread ?? 0, hint: 'non lus' },
+                        ].map((item) => (
+                            <div
+                                key={item.label}
+                                className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 backdrop-blur-sm"
+                            >
+                                <div className="ivoire-serif text-3xl text-sand">{item.value}</div>
+                                <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-sand/45">
+                                    {item.label}
+                                    {item.hint ? ` · ${item.hint}` : ''}
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ) : (
-                    <a
-                        href="#mes-cours"
-                        className="mt-6 inline-flex items-center gap-2 rounded-full bg-honey px-6 py-3 text-sm font-semibold text-cocoa shadow-lg transition hover:bg-sand"
-                    >
-                        <BookOpen size={16} />
-                        Voir mes cours
-                    </a>
                 )}
             </div>
         </motion.div>
     );
 }
 
-function QuickAction({
-    href,
-    icon: Icon,
+function RecentItem({
     title,
-    description,
-    gradient,
-    delay = 0,
+    subtitle,
+    status,
+    index,
 }: {
-    href: string;
-    icon: typeof Video;
     title: string;
-    description: string;
-    gradient: string;
-    delay?: number;
+    subtitle: string;
+    status: 'published' | 'draft';
+    index: number;
 }) {
-    return (
-        <motion.a
-            {...rise}
-            transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
-            whileHover={{ y: -4 }}
-            href={href}
-            className="group flex items-center gap-4 rounded-2xl border border-cocoa/[0.07] bg-white/90 p-5 shadow-sm backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg"
-        >
-            <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${gradient} text-sand shadow-md`}>
-                <Icon size={20} />
-            </div>
-            <div className="min-w-0 flex-1">
-                <div className="font-semibold text-cocoa transition group-hover:text-emerald">{title}</div>
-                <div className="truncate text-xs text-cocoa/45">{description}</div>
-            </div>
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-sand/70 text-cocoa/40 transition-all duration-300 group-hover:bg-emerald group-hover:text-sand">
-                <ArrowUpRight size={15} />
-            </span>
-        </motion.a>
-    );
-}
-
-function RecentItem({ title, subtitle, status, index }: { title: string; subtitle: string; status: 'published' | 'draft'; index: number }) {
     const palette = ['bg-emerald/10 text-emerald', 'bg-honey/15 text-honey', 'bg-terracotta/10 text-terracotta', 'bg-cocoa/8 text-cocoa'];
     return (
-        <div className="flex items-center gap-4 rounded-xl px-3 py-2.5 transition hover:bg-sand/60">
+        <div className="flex items-center gap-4 rounded-xl px-3 py-3 transition hover:bg-sand/70">
             <div className={`ivoire-serif grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm ${palette[index % palette.length]}`}>
                 {title.charAt(0).toUpperCase()}
             </div>
@@ -229,48 +284,142 @@ function AdminDashboard({
     stats,
     testimonials,
     courses,
+    unreadMessages,
+    upcomingEvents,
     name,
 }: {
     stats: Stats;
     testimonials: Testimonial[];
     courses: CourseSummary[];
+    unreadMessages: UnreadMessage[];
+    upcomingEvents: UpcomingEvent[];
     name: string;
 }) {
+    const kpis = [
+        { icon: UserCheck, label: 'Clients', value: stats.clients, subtitle: `${stats.members} membres`, accent: 'cocoa' as const },
+        { icon: BookOpen, label: 'Cours', value: stats.courses, subtitle: `${stats.coursesPublished} publiés`, accent: 'emerald' as const },
+        { icon: Video, label: 'Contenus', value: stats.contents, subtitle: `${stats.contentsPaid} payants · ${stats.contentsFree} gratuits`, accent: 'honey' as const },
+        { icon: CalendarDays, label: 'Événements', value: stats.events, subtitle: `${stats.eventsPublished} publiés`, accent: 'terracotta' as const },
+        { icon: Inbox, label: 'Messages non lus', value: stats.contactUnread ?? 0, subtitle: `${stats.contactMessages ?? 0} au total`, accent: 'honey' as const },
+        { icon: MessageSquareQuote, label: 'Témoignages', value: stats.testimonials, subtitle: `${stats.published} publiés`, accent: 'emerald' as const },
+        { icon: Users, label: 'Administrateurs', value: stats.admins, subtitle: 'Accès équipe', accent: 'cocoa' as const },
+        { icon: Megaphone, label: 'Contenus publiés', value: stats.contentsPublished, subtitle: `sur ${stats.contents} contenus`, accent: 'terracotta' as const },
+    ];
+
     return (
         <>
             <HeroBanner name={name} stats={stats} isAdmin />
 
-            <div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                <AdminStatCard icon={Activity} label="Visiteurs aujourd'hui" value={stats.visitorsToday} subtitle="Visiteurs uniques" accent="emerald" />
-                <AdminStatCard icon={DollarSign} label="Chiffre d'affaires" value={`${stats.revenue.toLocaleString()} XOF`} subtitle={stats.revenueTrend} accent="honey" />
-                <AdminStatCard icon={UserCheck} label="Clients" value={stats.clients} subtitle={`${stats.members} membres au total`} accent="terracotta" />
-                <AdminStatCard icon={BookOpen} label="Cours" value={stats.courses} subtitle={`${stats.coursesPublished} publiés`} accent="cocoa" />
-            </div>
-
-            <div className="mt-5 grid gap-5 sm:grid-cols-3">
-                <AdminStatCard icon={MessageSquareQuote} label="Témoignages" value={stats.testimonials} subtitle={`${stats.published} publiés`} accent="emerald" />
-                <AdminStatCard icon={Video} label="Contenus" value={stats.contents} subtitle={`${stats.contentsPaid} payants · ${stats.contentsFree} gratuits`} accent="honey" />
-                <AdminStatCard icon={Users} label="Administrateurs" value={stats.admins} accent="terracotta" />
-            </div>
-
             <div className="mt-10">
-                <div className="mb-5 flex items-center gap-3">
-                    <h2 className="ivoire-serif text-xl text-cocoa">Actions rapides</h2>
-                    <span className="h-px flex-1 bg-gradient-to-r from-cocoa/15 to-transparent" />
-                </div>
+                <SectionTitle title="Indicateurs clés" />
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <QuickAction href="/admin/cours" icon={BookOpen} title="Cours" description="Créer et gérer les cours Skool" gradient="from-emerald to-[#154d3b]" delay={0.05} />
-                    <QuickAction href="/admin/contenus" icon={Video} title="Contenus" description="Médias free / payants" gradient="from-honey to-[#a37a33]" delay={0.1} />
-                    <QuickAction href="/admin/temoignages" icon={MessageSquareQuote} title="Témoignages" description="Gérer les avis clients" gradient="from-terracotta to-[#a3542e]" delay={0.15} />
-                    <QuickAction href="/admin/newsletter" icon={Mail} title="Newsletter" description="Communiquer avec les abonnés" gradient="from-cocoa to-[#171009]" delay={0.2} />
+                    {kpis.map((kpi) => (
+                        <AdminStatCard
+                            key={kpi.label}
+                            icon={kpi.icon}
+                            label={kpi.label}
+                            value={kpi.value}
+                            subtitle={kpi.subtitle}
+                            accent={kpi.accent}
+                        />
+                    ))}
                 </div>
+            </div>
+
+            <div className="mt-10 grid gap-5 lg:grid-cols-2">
+                <AdminPanel
+                    title="À traiter"
+                    action={
+                        <a href="/admin/contact" className="text-xs font-semibold text-cocoa/45 transition hover:text-honey">
+                            Boîte mail
+                        </a>
+                    }
+                >
+                    <div className="p-2">
+                        {unreadMessages.length === 0 ? (
+                            <div className="px-4 py-12 text-center">
+                                <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-emerald/10">
+                                    <BadgeCheck size={20} className="text-emerald" />
+                                </div>
+                                <p className="mt-3 text-sm text-cocoa/50">Aucun message non lu</p>
+                            </div>
+                        ) : (
+                            unreadMessages.map((msg) => (
+                                <a
+                                    key={msg.id}
+                                    href="/admin/contact"
+                                    className="block rounded-xl px-4 py-3 transition hover:bg-sand/70"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className="truncate text-sm font-medium text-cocoa">{msg.name}</p>
+                                        <span className="shrink-0 rounded-full bg-honey/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-honey">
+                                            {TOPIC_LABELS[msg.topic] || msg.topic}
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 line-clamp-1 text-xs text-cocoa/50">{msg.message}</p>
+                                    <p className="mt-1 text-[11px] text-cocoa/35">{formatShortDate(msg.created_at)}</p>
+                                </a>
+                            ))
+                        )}
+                    </div>
+                </AdminPanel>
+
+                <AdminPanel
+                    title="Prochains RDV"
+                    action={
+                        <a href="/admin/evenements" className="text-xs font-semibold text-cocoa/45 transition hover:text-honey">
+                            Gérer
+                        </a>
+                    }
+                >
+                    <div className="p-2">
+                        {upcomingEvents.length === 0 ? (
+                            <div className="px-4 py-12 text-center">
+                                <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-honey/15">
+                                    <CalendarDays size={20} className="text-honey" />
+                                </div>
+                                <p className="mt-3 text-sm text-cocoa/50">Aucun événement à venir</p>
+                                <a href="/admin/evenements" className="mt-3 inline-block text-xs font-medium text-honey hover:text-cocoa">
+                                    Créer un rendez-vous
+                                </a>
+                            </div>
+                        ) : (
+                            upcomingEvents.map((event) => (
+                                <a
+                                    key={event.id}
+                                    href={`/admin/evenements/${event.id}/inscrits`}
+                                    className="block rounded-xl px-4 py-3 transition hover:bg-sand/70"
+                                >
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="rounded-full bg-cocoa/8 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cocoa/55">
+                                            {event.type_label}
+                                        </span>
+                                        <span className="text-[10px] text-cocoa/40">{event.access_mode_label}</span>
+                                    </div>
+                                    <p className="mt-1.5 text-sm font-medium text-cocoa">{event.title}</p>
+                                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-cocoa/45">
+                                        <span className="inline-flex items-center gap-1">
+                                            <Clock size={11} />
+                                            {formatShortDate(event.starts_at)}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1">
+                                            <MapPin size={11} />
+                                            {event.place}
+                                        </span>
+                                        <span>{event.registrations_count} inscrits</span>
+                                    </div>
+                                </a>
+                            ))
+                        )}
+                    </div>
+                </AdminPanel>
             </div>
 
             <div className="mt-10 grid gap-5 lg:grid-cols-2">
                 <AdminPanel
                     title="Cours récents"
                     action={
-                        <a href="/admin/cours" className="group flex items-center gap-1 text-xs font-semibold text-emerald transition hover:text-cocoa">
+                        <a href="/admin/cours" className="group flex items-center gap-1 text-xs font-semibold text-cocoa/45 transition hover:text-honey">
                             Voir tout
                             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                         </a>
@@ -296,7 +445,7 @@ function AdminDashboard({
                 <AdminPanel
                     title="Témoignages récents"
                     action={
-                        <a href="/admin/temoignages" className="group flex items-center gap-1 text-xs font-semibold text-emerald transition hover:text-cocoa">
+                        <a href="/admin/temoignages" className="group flex items-center gap-1 text-xs font-semibold text-cocoa/45 transition hover:text-honey">
                             Voir tout
                             <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
                         </a>
@@ -349,13 +498,10 @@ function ClientDashboard({
             </div>
 
             <div id="mes-cours" className="mt-10 scroll-mt-24">
-                <div className="mb-5 flex items-center gap-3">
-                    <h2 className="ivoire-serif text-xl text-cocoa">Mes cours</h2>
-                    <span className="h-px flex-1 bg-gradient-to-r from-cocoa/15 to-transparent" />
-                </div>
+                <SectionTitle title="Mes cours" />
 
                 {myCourses.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
+                    <div className="rounded-[1.75rem] border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
                         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald/10">
                             <BookOpen size={24} className="text-emerald" />
                         </div>
@@ -369,7 +515,7 @@ function ClientDashboard({
                         {myCourses.map((course) => (
                             <div
                                 key={course.id}
-                                className="overflow-hidden rounded-2xl border border-cocoa/[0.07] bg-white/90 shadow-sm"
+                                className="overflow-hidden rounded-[1.5rem] border border-cocoa/[0.07] bg-white/90 shadow-sm"
                             >
                                 <div className="aspect-[16/9] bg-cocoa/5">
                                     {course.cover_image ? (
@@ -393,7 +539,7 @@ function ClientDashboard({
                                             href={course.private_link}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="inline-flex items-center gap-2 rounded-xl bg-emerald px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-cocoa"
+                                            className="inline-flex items-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-honey hover:text-cocoa"
                                         >
                                             <ExternalLink size={15} />
                                             Ouvrir sur Skool
@@ -402,7 +548,7 @@ function ClientDashboard({
                                             type="button"
                                             onClick={() => requestAccess(course.id)}
                                             disabled={pendingId === course.id}
-                                            className="inline-flex items-center gap-2 rounded-xl border border-cocoa/15 px-4 py-2.5 text-sm font-medium text-cocoa transition hover:bg-sand disabled:opacity-50"
+                                            className="inline-flex items-center gap-2 rounded-full border border-cocoa/15 px-4 py-2.5 text-sm font-medium text-cocoa transition hover:bg-sand disabled:opacity-50"
                                         >
                                             <Send size={15} />
                                             {pendingId === course.id ? 'Envoi...' : 'Renvoyer par email'}
@@ -416,13 +562,10 @@ function ClientDashboard({
             </div>
 
             <div className="mt-12">
-                <div className="mb-5 flex items-center gap-3">
-                    <h2 className="ivoire-serif text-xl text-cocoa">Cours disponibles</h2>
-                    <span className="h-px flex-1 bg-gradient-to-r from-cocoa/15 to-transparent" />
-                </div>
+                <SectionTitle title="Cours disponibles" />
 
                 {availableCourses.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
+                    <div className="rounded-[1.75rem] border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
                         <p className="text-sm text-cocoa/50">Aucun cours publié pour le moment.</p>
                     </div>
                 ) : (
@@ -432,7 +575,7 @@ function ClientDashboard({
                             return (
                                 <div
                                     key={course.id}
-                                    className="flex flex-col overflow-hidden rounded-2xl border border-cocoa/[0.07] bg-white/90 shadow-sm"
+                                    className="flex flex-col overflow-hidden rounded-[1.5rem] border border-cocoa/[0.07] bg-white/90 shadow-sm"
                                 >
                                     <div className="aspect-[16/9] bg-cocoa/5">
                                         {course.cover_image ? (
@@ -457,7 +600,7 @@ function ClientDashboard({
                                                     href={course.access!.private_link!}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-cocoa"
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-honey hover:text-cocoa"
                                                 >
                                                     <ExternalLink size={15} />
                                                     Ouvrir le cours
@@ -467,7 +610,7 @@ function ClientDashboard({
                                                     type="button"
                                                     onClick={() => requestAccess(course.id)}
                                                     disabled={pendingId === course.id || !course.has_invite_link}
-                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-cocoa disabled:cursor-not-allowed disabled:opacity-50"
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-honey hover:text-cocoa disabled:cursor-not-allowed disabled:opacity-50"
                                                     title={!course.has_invite_link ? 'Lien non configuré' : undefined}
                                                 >
                                                     <Send size={15} />
@@ -496,6 +639,8 @@ export default function Dashboard() {
         stats,
         testimonials = [],
         courses = [],
+        unreadMessages = [],
+        upcomingEvents = [],
         availableCourses = [],
         myCourses = [],
         isAdmin,
@@ -518,6 +663,8 @@ export default function Dashboard() {
                         stats={stats}
                         testimonials={testimonials}
                         courses={courses}
+                        unreadMessages={unreadMessages}
+                        upcomingEvents={upcomingEvents}
                         name={auth.user.name}
                     />
                 ) : (
