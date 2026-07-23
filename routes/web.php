@@ -3,11 +3,13 @@
 use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\CollaboratorController;
 use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UploadController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\CourseAccessController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\SubscriberController;
@@ -18,6 +20,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', HomeController::class)->name('home');
 Route::get('/a-propos', HomeController::class)->name('a-propos');
 Route::get('/contenus', HomeController::class)->name('contenus');
+Route::get('/contenus/cours/{slug}', HomeController::class)->name('cours.show');
 Route::get('/contenus/{slug}', HomeController::class)->name('contenu.show');
 Route::get('/galerie', HomeController::class)->name('galerie');
 Route::get('/contact', HomeController::class)->name('contact');
@@ -35,6 +38,7 @@ Route::post('/invitation/{token}', [InvitationController::class, 'accept'])->nam
 // Espace utilisateur (client ou admin)
 Route::middleware(['auth'])->group(function () {
     Route::get('/espace', [DashboardController::class, 'index'])->name('espace');
+    Route::post('/cours/{course}/acceder', [CourseAccessController::class, 'request'])->name('courses.access');
 });
 
 // Routes admin uniquement
@@ -54,6 +58,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('contenus/{content}', [ContentController::class, 'destroy'])->name('contents.destroy');
     Route::post('categories', [ContentController::class, 'storeCategory'])->name('categories.store');
     Route::delete('categories/{category}', [ContentController::class, 'destroyCategory'])->name('categories.destroy');
+
+    Route::get('cours', [CourseController::class, 'index'])->name('courses.index');
+    Route::post('cours', [CourseController::class, 'store'])->name('courses.store');
+    Route::patch('cours/{course}', [CourseController::class, 'update'])->name('courses.update');
+    Route::patch('cours/{course}/toggle', [CourseController::class, 'togglePublish'])->name('courses.toggle');
+    Route::delete('cours/{course}', [CourseController::class, 'destroy'])->name('courses.destroy');
     
     Route::get('collaborateurs', [CollaboratorController::class, 'index'])->name('collaborators.index');
     Route::post('collaborateurs', [CollaboratorController::class, 'store'])->name('collaborators.store');
@@ -82,4 +92,3 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::delete('publicites/{advertisement}', [AdvertisementController::class, 'destroy'])->name('advertisements.destroy');
 });
 
-require __DIR__.'/settings.php';

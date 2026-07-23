@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'skool' => [
+        'webhook_url' => env('SKOOL_WEBHOOK_URL'),
+        'webhook_secret' => env('SKOOL_WEBHOOK_SECRET'),
+    ],
+
 ];

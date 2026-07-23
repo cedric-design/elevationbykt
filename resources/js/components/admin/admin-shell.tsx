@@ -5,6 +5,7 @@ import {
     LayoutDashboard,
     MessageSquareQuote,
     Video,
+    BookOpen,
     Users,
     UsersRound,
     Mail,
@@ -18,8 +19,9 @@ import {
 } from 'lucide-react';
 import ElevationLogo from '@/components/ivoire/elevation-logo';
 
-const NAV = [
+const ADMIN_NAV = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
+    { icon: BookOpen, label: 'Cours', href: '/admin/cours' },
     { icon: Video, label: 'Contenus', href: '/admin/contenus' },
     { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
     { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
@@ -28,11 +30,16 @@ const NAV = [
     { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
 ];
 
-function NavLinks({ current, onNavigate }: { current: string; onNavigate?: () => void }) {
+const CLIENT_NAV = [
+    { icon: LayoutDashboard, label: 'Mon espace', href: '/espace' },
+    { icon: BookOpen, label: 'Mes cours', href: '/espace' },
+];
+
+function NavLinks({ current, items, onNavigate }: { current: string; items: typeof ADMIN_NAV; onNavigate?: () => void }) {
     return (
         <nav className="mt-6 flex-1 space-y-1 overflow-y-auto px-4">
             <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-sand/30">Menu</p>
-            {NAV.map(({ icon: Icon, label, href }) => {
+            {items.map(({ icon: Icon, label, href }) => {
                 const active = href === current;
                 return (
                     <a
@@ -69,7 +76,7 @@ function SidebarBrand() {
     );
 }
 
-function SidebarFooter({ user }: { user: { name: string } }) {
+function SidebarFooter({ user, isAdmin }: { user: { name: string }; isAdmin: boolean }) {
     return (
         <div className="border-t border-white/[0.06] p-4">
             <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/[0.05] p-3 ring-1 ring-white/[0.04]">
@@ -78,7 +85,7 @@ function SidebarFooter({ user }: { user: { name: string } }) {
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-sand">{user.name}</div>
-                    <div className="truncate text-[11px] text-sand/40">Administrateur</div>
+                    <div className="truncate text-[11px] text-sand/40">{isAdmin ? 'Administrateur' : 'Membre'}</div>
                 </div>
             </div>
             <div className="flex gap-2">
@@ -101,21 +108,24 @@ function SidebarFooter({ user }: { user: { name: string } }) {
     );
 }
 
-export function AdminSidebar({ current, user }: { current: string; user: { name: string } }) {
+export function AdminSidebar({ current, user, isAdmin }: { current: string; user: { name: string }; isAdmin: boolean }) {
+    const nav = isAdmin ? ADMIN_NAV : CLIENT_NAV;
+
     return (
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col overflow-hidden bg-gradient-to-b from-cocoa via-[#261c13] to-[#1a120b] lg:flex">
             <div className="pointer-events-none absolute -left-16 top-24 h-48 w-48 rounded-full bg-emerald/20 blur-3xl" />
             <div className="pointer-events-none absolute -right-20 bottom-32 h-56 w-56 rounded-full bg-honey/10 blur-3xl" />
             <div className="relative flex h-full flex-col">
                 <SidebarBrand />
-                <NavLinks current={current} />
-                <SidebarFooter user={user} />
+                <NavLinks current={current} items={nav} />
+                <SidebarFooter user={user} isAdmin={isAdmin} />
             </div>
         </aside>
     );
 }
 
-function MobileSidebar({ open, onClose, current, user }: { open: boolean; onClose: () => void; current: string; user: { name: string } }) {
+function MobileSidebar({ open, onClose, current, user, isAdmin }: { open: boolean; onClose: () => void; current: string; user: { name: string }; isAdmin: boolean }) {
+    const nav = isAdmin ? ADMIN_NAV : CLIENT_NAV;
     return (
         <AnimatePresence>
             {open && (
@@ -140,8 +150,8 @@ function MobileSidebar({ open, onClose, current, user }: { open: boolean; onClos
                                 <X size={18} />
                             </button>
                         </div>
-                        <NavLinks current={current} onNavigate={onClose} />
-                        <SidebarFooter user={user} />
+                        <NavLinks current={current} items={nav} onNavigate={onClose} />
+                        <SidebarFooter user={user} isAdmin={isAdmin} />
                     </motion.aside>
                 </>
             )}
@@ -154,12 +164,14 @@ export function AdminHeader({
     subtitle,
     actions,
     user,
+    isAdmin = true,
     onMenu,
 }: {
     title: string;
     subtitle?: string;
     actions?: ReactNode;
     user: { name: string };
+    isAdmin?: boolean;
     onMenu?: () => void;
 }) {
     return (
@@ -180,10 +192,12 @@ export function AdminHeader({
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
                 {actions}
-                <button className="relative hidden h-11 w-11 place-items-center rounded-full border border-cocoa/10 bg-white text-cocoa/60 shadow-sm transition hover:border-emerald/30 hover:text-emerald sm:grid">
-                    <Bell size={17} />
-                    <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-terracotta ring-2 ring-white" />
-                </button>
+                {isAdmin && (
+                    <button className="relative hidden h-11 w-11 place-items-center rounded-full border border-cocoa/10 bg-white text-cocoa/60 shadow-sm transition hover:border-emerald/30 hover:text-emerald sm:grid">
+                        <Bell size={17} />
+                        <span className="absolute right-3 top-3 h-2 w-2 rounded-full bg-terracotta ring-2 ring-white" />
+                    </button>
+                )}
                 <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-emerald to-[#154d3b] font-semibold text-sand shadow-md shadow-emerald/20">
                     {user.name.charAt(0).toUpperCase()}
                 </div>
@@ -198,6 +212,7 @@ export function AdminShell({
     subtitle,
     actions,
     user,
+    isAdmin = true,
     children,
 }: {
     current: string;
@@ -205,6 +220,7 @@ export function AdminShell({
     subtitle?: string;
     actions?: ReactNode;
     user: { name: string };
+    isAdmin?: boolean;
     children: ReactNode;
 }) {
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -220,11 +236,11 @@ export function AdminShell({
                 }}
             />
 
-            <AdminSidebar current={current} user={user} />
-            <MobileSidebar open={mobileOpen} onClose={() => setMobileOpen(false)} current={current} user={user} />
+            <AdminSidebar current={current} user={user} isAdmin={isAdmin} />
+            <MobileSidebar open={mobileOpen} onClose={() => setMobileOpen(false)} current={current} user={user} isAdmin={isAdmin} />
 
             <div className="relative lg:pl-[264px]">
-                <AdminHeader title={title} subtitle={subtitle} actions={actions} user={user} onMenu={() => setMobileOpen(true)} />
+                <AdminHeader title={title} subtitle={subtitle} actions={actions} user={user} isAdmin={isAdmin} onMenu={() => setMobileOpen(true)} />
                 <main className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-10">
                     <motion.div
                         initial={{ opacity: 0, y: 12 }}

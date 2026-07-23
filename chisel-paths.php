@@ -1,11 +1,9 @@
 <?php
 
 return [
-    'login' => 'resources/js/pages/auth/login.tsx',
-    'register' => 'resources/js/pages/auth/register.tsx',
+    'login' => 'resources/js/pages/welcome.tsx',
+    'register' => 'resources/js/pages/welcome.tsx',
     'welcome' => 'resources/js/pages/welcome.tsx',
-    'profile' => 'resources/js/pages/settings/profile.tsx',
-    'security' => 'resources/js/pages/settings/security.tsx',
     'verify_email' => 'resources/js/pages/auth/verify-email.tsx',
     'two_factor_challenge' => 'resources/js/pages/auth/two-factor-challenge.tsx',
     'confirm_password' => 'resources/js/pages/auth/confirm-password.tsx',

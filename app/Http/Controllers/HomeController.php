@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Advertisement;
 use App\Models\Content;
 use App\Models\ContentCategory;
+use App\Models\Course;
 use App\Models\Testimonial;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,16 +15,50 @@ class HomeController extends Controller
 {
     public function __invoke(Request $request, ?string $slug = null): Response
     {
+        $user = $request->user();
+
+        $courses = Course::query()
+            ->published()
+            ->available()
+            ->with('modules')
+            ->orderBy('sort_order')
+            ->latest()
+            ->get()
+            ->map(fn (Course $course) => [
+                'id' => $course->id,
+                'title' => $course->title,
+                'slug' => $course->slug,
+                'description' => $course->description,
+                'cover_image' => $course->cover_image,
+                'has_invite_link' => filled($course->skool_invite_link),
+                'modules_count' => $course->modules->count(),
+                'modules' => $course->modules->map(fn ($m) => [
+                    'id' => $m->id,
+                    'title' => $m->title,
+                    'description' => $m->description,
+                    'sort_order' => $m->sort_order,
+                ])->values(),
+            ]);
+
         $data = [
             'testimonials' => Testimonial::where('is_published', true)->latest()->get(),
             'contents' => Content::with('category')
                 ->where('is_published', true)
                 ->latest()
                 ->get(),
+            'courses' => $courses,
             'categories' => ContentCategory::orderBy('sort_order')->get(),
             'advertisement' => Advertisement::active()->latest()->first(),
-            'isAuthenticated' => $request->user() !== null,
-            'isAdmin' => $request->user()?->isAdmin() ?? false,
+            'isAuthenticated' => $user !== null,
+            'isAdmin' => $user?->isAdmin() ?? false,
+            'unlockedCourseIds' => $user
+                ? $user->courseAccesses()
+                    ->whereIn('status', ['sent', 'active', 'pending'])
+                    ->whereNotNull('private_link')
+                    ->pluck('course_id')
+                    ->values()
+                    ->all()
+                : [],
         ];
 
         if ($slug) {
@@ -31,8 +66,9 @@ class HomeController extends Controller
                 ->where('slug', $slug)
                 ->where('is_published', true)
                 ->first();
-            
+
             $data['currentContent'] = $content;
+            $data['currentCourse'] = $courses->firstWhere('slug', $slug);
         }
 
         return Inertia::render('welcome', $data);

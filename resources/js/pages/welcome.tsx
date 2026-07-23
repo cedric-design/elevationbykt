@@ -1,4 +1,4 @@
-import { Head, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { Lock } from 'lucide-react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
@@ -17,7 +17,7 @@ import {
     TiltFrame,
 } from '@/components/ivoire/motion';
 import { GALLERY, IMG } from '@/data/images';
-import { ABOUT_KADHY, COURSES, PROFILE, STATS, TIMELINE, VISION_CLOSING, VISION_INTRO, VISION_PILLARS } from '@/data/content';
+import { ABOUT_KADHY, PROFILE, STATS, TIMELINE, VISION_CLOSING, VISION_INTRO, VISION_PILLARS } from '@/data/content';
 
 interface Testimonial {
     id: number;
@@ -44,6 +44,25 @@ interface Content {
     currency: string;
     category: Category | null;
     is_featured: boolean;
+    skool_link?: string | null;
+}
+
+interface CourseModule {
+    id: number;
+    title: string;
+    description: string | null;
+    sort_order: number;
+}
+
+interface CourseItem {
+    id: number;
+    title: string;
+    slug: string;
+    description: string | null;
+    cover_image: string | null;
+    has_invite_link: boolean;
+    modules_count: number;
+    modules: CourseModule[];
 }
 
 interface Advertisement {
@@ -56,28 +75,37 @@ interface Advertisement {
 interface PageProps {
     testimonials: Testimonial[];
     contents: Content[];
+    courses: CourseItem[];
     categories: Category[];
     currentContent?: Content | null;
+    currentCourse?: CourseItem | null;
     advertisement?: Advertisement | null;
     isAuthenticated: boolean;
     isAdmin: boolean;
+    unlockedCourseIds: number[];
     [key: string]: unknown;
 }
 
-const AppContext = createContext<{ 
-    testimonials: Testimonial[]; 
+const AppContext = createContext<{
+    testimonials: Testimonial[];
     contents: Content[];
+    courses: CourseItem[];
     categories: Category[];
     currentContent?: Content | null;
-    isAuthenticated: boolean; 
+    currentCourse?: CourseItem | null;
+    isAuthenticated: boolean;
     isAdmin: boolean;
+    unlockedCourseIds: number[];
 }>({
     testimonials: [],
     contents: [],
+    courses: [],
     categories: [],
     currentContent: null,
+    currentCourse: null,
     isAuthenticated: false,
     isAdmin: false,
+    unlockedCourseIds: [],
 });
 
 const FALLBACK = 'from-[#1f6b52] via-[#c79a4b] to-[#c96f42]';
@@ -93,8 +121,6 @@ const IVOIRE_ORBS = [
     'radial-gradient(circle, rgba(31,107,82,0.3) 0%, transparent 70%)',
     'radial-gradient(circle, rgba(199,154,75,0.35) 0%, transparent 70%)',
 ];
-
-type Course = (typeof COURSES)[number];
 
 const to = (p: string) => (p ? `/${p}` : '/');
 
@@ -375,48 +401,6 @@ function StatsSection() {
     );
 }
 
-function CourseGrid({ items }: { items: Course[] }) {
-    return (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((c, i) => (
-                <Reveal key={c.id} delay={(i % 3) * 0.08} y={30}>
-                    <motion.article
-                        whileHover={{ y: -10, scale: 1.02 }}
-                        transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                        className="ivoire-card-hover group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-cocoa/10 bg-white/50"
-                    >
-                        <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-emerald/25 via-honey/20 to-terracotta/25">
-                            <motion.div className="absolute inset-0 bg-emerald/0 transition duration-500 group-hover:bg-emerald/10" />
-                            <div className="absolute inset-0 grid place-items-center">
-                                <motion.span whileHover={{ scale: 1.15 }} className="grid h-14 w-14 place-items-center rounded-full bg-sand text-emerald shadow-lg">
-                                    ▶
-                                </motion.span>
-                            </div>
-                            <span className="absolute left-4 top-4 rounded-full bg-emerald px-3 py-1 text-xs font-medium text-sand">{c.tag}</span>
-                        </div>
-                        <div className="flex flex-1 flex-col p-6">
-                            <span className="text-xs uppercase tracking-widest text-cocoa/45">{c.kind}</span>
-                            <h3 className="ivoire-serif mt-1 text-2xl text-cocoa transition group-hover:text-emerald">{c.title}</h3>
-                            <p className="mt-2 flex-1 text-sm leading-relaxed text-cocoa/70">{c.blurb}</p>
-                            <div className="mt-5 flex items-center justify-between text-xs text-cocoa/55">
-                                <span>{c.length}</span>
-                                <span>{c.level}</span>
-                            </div>
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="mt-4 rounded-full border border-emerald/40 py-2.5 text-sm font-medium text-emerald transition hover:bg-emerald hover:text-sand"
-                            >
-                                Accéder au contenu
-                            </motion.button>
-                        </div>
-                    </motion.article>
-                </Reveal>
-            ))}
-        </div>
-    );
-}
-
 function ContentCard({ content, index }: { content: Content; index: number }) {
     const [playing, setPlaying] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
@@ -530,6 +514,65 @@ function DynamicContentGrid({ items, limit }: { items: Content[]; limit?: number
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {displayed.map((c, i) => (
                 <ContentCard key={c.id} content={c} index={i} />
+            ))}
+        </div>
+    );
+}
+
+function CourseCard({ course, index }: { course: CourseItem; index: number }) {
+    return (
+        <Reveal delay={(index % 3) * 0.08} y={30}>
+            <Link to={`/contenus/cours/${course.slug}`} className="block h-full">
+                <motion.article
+                    whileHover={{ y: -10, scale: 1.02 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+                    className="ivoire-card-hover group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-cocoa/10 bg-white/50"
+                >
+                    <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-emerald/25 via-honey/20 to-terracotta/25">
+                        {course.cover_image ? (
+                            <img src={course.cover_image} alt={course.title} className="h-full w-full object-cover" />
+                        ) : (
+                            <div className="absolute inset-0 grid place-items-center">
+                                <span className="text-4xl text-cocoa/25">📚</span>
+                            </div>
+                        )}
+                        <span className="absolute left-4 top-4 rounded-full bg-honey px-3 py-1 text-xs font-medium text-cocoa">
+                            Cours
+                        </span>
+                        {course.modules.length > 0 && (
+                            <span className="absolute right-4 top-4 rounded-full bg-cocoa/80 px-3 py-1 text-xs font-medium text-sand">
+                                {course.modules.length} module{course.modules.length > 1 ? 's' : ''}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex flex-1 flex-col p-6">
+                        <h3 className="ivoire-serif text-2xl text-cocoa transition group-hover:text-emerald">{course.title}</h3>
+                        {course.description && (
+                            <p className="mt-2 flex-1 line-clamp-2 text-sm leading-relaxed text-cocoa/70">{course.description}</p>
+                        )}
+                        <motion.span
+                            className="mt-4 block w-full rounded-full border border-emerald/40 py-2.5 text-center text-sm font-medium text-emerald transition group-hover:bg-emerald group-hover:text-sand"
+                        >
+                            Voir le cours
+                        </motion.span>
+                    </div>
+                </motion.article>
+            </Link>
+        </Reveal>
+    );
+}
+
+function CourseGrid({ items, limit }: { items: CourseItem[]; limit?: number }) {
+    const displayed = limit ? items.slice(0, limit) : items;
+
+    if (displayed.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {displayed.map((c, i) => (
+                <CourseCard key={c.id} course={c} index={i} />
             ))}
         </div>
     );
@@ -835,16 +878,18 @@ function Newsletter() {
 }
 
 function Home() {
-    const { contents } = useContext(AppContext);
+    const { contents, courses } = useContext(AppContext);
     const featuredContents = contents.filter(c => c.is_featured).slice(0, 3);
     const displayContents = featuredContents.length > 0 ? featuredContents : contents.slice(0, 3);
+    const displayCourses = courses.slice(0, 3);
+    const hasCatalog = displayCourses.length > 0 || displayContents.length > 0;
 
     return (
         <Page>
             <Hero />
             <StatsSection />
             <AboutPreview />
-            {contents.length > 0 && (
+            {hasCatalog && (
                 <section className="mx-auto max-w-6xl px-6 py-14">
                     <Reveal>
                         <div className="flex items-end justify-between">
@@ -857,9 +902,16 @@ function Home() {
                             </Link>
                         </div>
                     </Reveal>
-                    <div className="mt-10">
-                        <DynamicContentGrid items={displayContents} />
-                    </div>
+                    {displayCourses.length > 0 && (
+                        <div className="mt-10">
+                            <CourseGrid items={displayCourses} />
+                        </div>
+                    )}
+                    {displayContents.length > 0 && (
+                        <div className={displayCourses.length > 0 ? 'mt-10' : 'mt-10'}>
+                            <DynamicContentGrid items={displayContents} />
+                        </div>
+                    )}
                 </section>
             )}
             <VisionPreview />
@@ -1118,15 +1170,22 @@ function APropos() {
 }
 
 function Contenus() {
-    const { contents, categories } = useContext(AppContext);
-    const [typeFilter, setTypeFilter] = useState<'all' | 'free' | 'paid'>('all');
+    const { contents, courses, categories } = useContext(AppContext);
+    const [typeFilter, setTypeFilter] = useState<'all' | 'free' | 'paid' | 'courses'>('all');
     const [categoryFilter, setCategoryFilter] = useState<number | null>(null);
 
+    const showCourses = typeFilter === 'all' || typeFilter === 'courses';
+    const showContents = typeFilter !== 'courses';
+
     const filteredContents = contents.filter(c => {
-        if (typeFilter !== 'all' && c.type !== typeFilter) return false;
+        if (typeFilter === 'free' && c.type !== 'free') return false;
+        if (typeFilter === 'paid' && c.type !== 'paid') return false;
         if (categoryFilter !== null && c.category?.id !== categoryFilter) return false;
         return true;
     });
+
+    const visibleCount =
+        (showCourses ? courses.length : 0) + (showContents ? filteredContents.length : 0);
 
     return (
         <Page>
@@ -1139,45 +1198,34 @@ function Contenus() {
                     </p>
                 </Reveal>
 
-                {/* Filtres */}
                 <Reveal delay={0.1}>
                     <div className="mt-10 flex flex-wrap items-center gap-4">
-                        {/* Filtre par type */}
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setTypeFilter('all')}
-                                className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                                    typeFilter === 'all'
-                                        ? 'bg-emerald text-sand'
-                                        : 'border border-cocoa/15 text-cocoa/70 hover:border-emerald hover:text-emerald'
-                                }`}
-                            >
-                                Tous
-                            </button>
-                            <button
-                                onClick={() => setTypeFilter('free')}
-                                className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                                    typeFilter === 'free'
-                                        ? 'bg-emerald text-sand'
-                                        : 'border border-cocoa/15 text-cocoa/70 hover:border-emerald hover:text-emerald'
-                                }`}
-                            >
-                                Gratuits
-                            </button>
-                            <button
-                                onClick={() => setTypeFilter('paid')}
-                                className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                                    typeFilter === 'paid'
-                                        ? 'bg-honey text-cocoa'
-                                        : 'border border-cocoa/15 text-cocoa/70 hover:border-honey hover:text-honey'
-                                }`}
-                            >
-                                Payants
-                            </button>
+                        <div className="flex flex-wrap gap-2">
+                            {(
+                                [
+                                    ['all', 'Tous'],
+                                    ['courses', 'Cours'],
+                                    ['free', 'Gratuits'],
+                                    ['paid', 'Payants'],
+                                ] as const
+                            ).map(([value, label]) => (
+                                <button
+                                    key={value}
+                                    onClick={() => setTypeFilter(value)}
+                                    className={`rounded-full px-5 py-2 text-sm font-medium transition ${
+                                        typeFilter === value
+                                            ? value === 'paid'
+                                                ? 'bg-honey text-cocoa'
+                                                : 'bg-emerald text-sand'
+                                            : 'border border-cocoa/15 text-cocoa/70 hover:border-emerald hover:text-emerald'
+                                    }`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
                         </div>
 
-                        {/* Filtre par catégorie */}
-                        {categories.length > 0 && (
+                        {categories.length > 0 && showContents && (
                             <div className="flex items-center gap-2 border-l border-cocoa/15 pl-4">
                                 <span className="text-xs text-cocoa/50">Catégorie :</span>
                                 <select
@@ -1193,16 +1241,35 @@ function Contenus() {
                             </div>
                         )}
 
-                        {/* Compteur */}
                         <span className="ml-auto text-sm text-cocoa/50">
-                            {filteredContents.length} contenu{filteredContents.length !== 1 ? 's' : ''}
+                            {visibleCount} élément{visibleCount !== 1 ? 's' : ''}
                         </span>
                     </div>
                 </Reveal>
 
-                <div className="mt-10">
-                    <DynamicContentGrid items={filteredContents} />
-                </div>
+                {showCourses && courses.length > 0 && (
+                    <div className="mt-10">
+                        {typeFilter === 'all' && (
+                            <h2 className="ivoire-serif mb-6 text-2xl text-cocoa">Cours</h2>
+                        )}
+                        <CourseGrid items={courses} />
+                    </div>
+                )}
+
+                {showContents && filteredContents.length > 0 && (
+                    <div className="mt-10">
+                        {typeFilter === 'all' && courses.length > 0 && (
+                            <h2 className="ivoire-serif mb-6 text-2xl text-cocoa">Contenus</h2>
+                        )}
+                        <DynamicContentGrid items={filteredContents} />
+                    </div>
+                )}
+
+                {visibleCount === 0 && (
+                    <div className="mt-10 rounded-2xl border border-cocoa/10 bg-white/50 p-12 text-center">
+                        <p className="text-cocoa/50">Aucun élément disponible pour le moment</p>
+                    </div>
+                )}
 
                 <Reveal delay={0.1}>
                     <motion.div whileHover={{ scale: 1.01 }} className="relative mt-14 overflow-hidden rounded-[2rem]">
@@ -1225,6 +1292,193 @@ function Contenus() {
                         </div>
                     </motion.div>
                 </Reveal>
+            </div>
+        </Page>
+    );
+}
+
+function CourseDetail() {
+    const { courses, isAuthenticated, unlockedCourseIds } = useContext(AppContext);
+    const slug = window.location.pathname.split('/').pop();
+    const course = courses.find((c) => c.slug === slug);
+    const [paying, setPaying] = useState(false);
+
+    if (!course) {
+        return (
+            <Page>
+                <div className="mx-auto max-w-4xl px-6 pt-32 text-center">
+                    <h1 className="ivoire-serif text-4xl text-cocoa">Cours introuvable</h1>
+                    <p className="mt-4 text-cocoa/70">Ce cours n'existe pas ou n'est plus disponible.</p>
+                    <Link to="/contenus" className="mt-6 inline-block rounded-full bg-emerald px-6 py-3 text-sand">
+                        Voir tous les contenus
+                    </Link>
+                </div>
+            </Page>
+        );
+    }
+
+    const alreadyUnlocked = unlockedCourseIds.includes(course.id);
+    const loginRedirect = `/connexion?redirect=${encodeURIComponent(`/contenus/cours/${course.slug}`)}`;
+
+    const handlePay = () => {
+        if (!isAuthenticated) {
+            window.location.href = loginRedirect;
+            return;
+        }
+        setPaying(true);
+        router.post(`/cours/${course.id}/acceder`, {}, {
+            preserveScroll: true,
+            onFinish: () => setPaying(false),
+        });
+    };
+
+    return (
+        <Page>
+            <div className="mx-auto max-w-5xl px-6 pt-32 pb-20">
+                <Reveal>
+                    <Link to="/contenus" className="mb-6 inline-flex items-center gap-2 text-sm text-cocoa/60 hover:text-emerald">
+                        ← Retour aux contenus
+                    </Link>
+                </Reveal>
+
+                <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+                    <div>
+                        <Reveal>
+                            <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-emerald/20 via-honey/10 to-terracotta/20">
+                                {course.cover_image ? (
+                                    <img src={course.cover_image} alt={course.title} className="aspect-video w-full object-cover" />
+                                ) : (
+                                    <div className="aspect-video grid place-items-center text-6xl text-cocoa/30">📚</div>
+                                )}
+                            </div>
+                        </Reveal>
+
+                        {course.description && (
+                            <Reveal delay={0.1}>
+                                <div className="mt-10">
+                                    <h2 className="text-sm font-semibold uppercase tracking-wider text-cocoa/60">À propos du cours</h2>
+                                    <p className="mt-3 whitespace-pre-line text-lg leading-relaxed text-cocoa/80">
+                                        {course.description}
+                                    </p>
+                                </div>
+                            </Reveal>
+                        )}
+
+                        <Reveal delay={0.15}>
+                            <div className="mt-12">
+                                <h2 className="ivoire-serif text-3xl text-cocoa">Programme</h2>
+                                <p className="mt-2 text-sm text-cocoa/55">
+                                    {course.modules.length} module{course.modules.length !== 1 ? 's' : ''} inclus
+                                </p>
+
+                                {course.modules.length === 0 ? (
+                                    <p className="mt-6 rounded-2xl border border-dashed border-cocoa/15 bg-white/50 p-8 text-center text-sm text-cocoa/50">
+                                        Le détail des modules sera bientôt disponible.
+                                    </p>
+                                ) : (
+                                    <ol className="mt-6 space-y-3">
+                                        {course.modules.map((mod, i) => (
+                                            <li
+                                                key={mod.id}
+                                                className="flex gap-4 rounded-2xl border border-cocoa/10 bg-white/70 p-5"
+                                            >
+                                                <span className="ivoire-serif grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald/10 text-emerald">
+                                                    {i + 1}
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <div className="font-semibold text-cocoa">{mod.title}</div>
+                                                    {mod.description && (
+                                                        <p className="mt-1 text-sm leading-relaxed text-cocoa/60">{mod.description}</p>
+                                                    )}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                )}
+                            </div>
+                        </Reveal>
+                    </div>
+
+                    <div>
+                        <Reveal delay={0.1}>
+                            <div className="sticky top-28 rounded-[1.75rem] border border-cocoa/10 bg-white/80 p-7 shadow-sm backdrop-blur-sm">
+                                <span className="text-xs uppercase tracking-widest text-cocoa/50">Cours Skool</span>
+                                <h1 className="ivoire-serif mt-2 text-3xl text-cocoa lg:text-4xl">{course.title}</h1>
+
+                                <div className="mt-5 flex flex-wrap gap-2">
+                                    <span className="rounded-full bg-honey/20 px-3 py-1 text-xs font-medium text-honey">
+                                        Accès sur invitation
+                                    </span>
+                                    {course.modules.length > 0 && (
+                                        <span className="rounded-full bg-emerald/10 px-3 py-1 text-xs font-medium text-emerald">
+                                            {course.modules.length} modules
+                                        </span>
+                                    )}
+                                </div>
+
+                                <p className="mt-6 text-sm leading-relaxed text-cocoa/65">
+                                    Après paiement, tu reçois par email ton lien d’invitation privé pour rejoindre le cours sur Skool.
+                                </p>
+
+                                <div className="mt-8">
+                                    {!course.has_invite_link ? (
+                                        <p className="rounded-2xl border border-cocoa/10 bg-sand/50 p-5 text-center text-sm text-cocoa/60">
+                                            Les inscriptions ouvriront bientôt.
+                                        </p>
+                                    ) : alreadyUnlocked ? (
+                                        <div className="space-y-3">
+                                            <p className="rounded-xl bg-emerald/10 px-4 py-3 text-center text-sm text-emerald">
+                                                Lien déjà envoyé — vérifie ta boîte mail ou ton espace.
+                                            </p>
+                                            <motion.button
+                                                type="button"
+                                                onClick={handlePay}
+                                                disabled={paying}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                className="w-full rounded-full border border-emerald/40 py-3.5 text-sm font-medium text-emerald transition hover:bg-emerald hover:text-sand disabled:opacity-60"
+                                            >
+                                                {paying ? 'Envoi...' : 'Renvoyer le lien par email'}
+                                            </motion.button>
+                                            <Link
+                                                to="/espace"
+                                                className="block w-full rounded-full bg-emerald py-3.5 text-center text-sm font-medium text-sand transition hover:bg-cocoa"
+                                            >
+                                                Voir mon espace
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <motion.button
+                                                type="button"
+                                                onClick={handlePay}
+                                                disabled={paying}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                className="flex w-full items-center justify-center gap-2 rounded-full bg-honey py-4 text-lg font-medium text-cocoa shadow-lg shadow-honey/30 transition hover:bg-honey/90 disabled:opacity-60"
+                                            >
+                                                {paying ? 'Traitement...' : 'Payer'}
+                                            </motion.button>
+                                            {!isAuthenticated && (
+                                                <p className="text-center text-xs text-cocoa/50">
+                                                    Connexion requise pour recevoir le lien.{' '}
+                                                    <Link to={loginRedirect} className="text-emerald hover:underline">
+                                                        Se connecter
+                                                    </Link>
+                                                </p>
+                                            )}
+                                            {isAuthenticated && (
+                                                <p className="text-center text-xs text-cocoa/50">
+                                                    Le lien d’invitation sera envoyé à ton adresse email.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </Reveal>
+                    </div>
+                </div>
             </div>
         </Page>
     );
@@ -1608,6 +1862,8 @@ function Login() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const redirectTo =
+        new URLSearchParams(window.location.search).get('redirect') || '/espace';
 
     const submit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -1627,8 +1883,7 @@ function Login() {
             });
 
             if (res.ok) {
-                const data = await res.json();
-                window.location.href = data.redirect || '/';
+                window.location.href = redirectTo;
             } else if (res.status === 422) {
                 const data = await res.json();
                 setError(data.message || 'Identifiants incorrects.');
@@ -1968,6 +2223,26 @@ function AdvertisementPopup({ ad }: { ad: Advertisement }) {
     );
 }
 
+function NotFound() {
+    return (
+        <Page>
+            <section className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-24 text-center">
+                <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald">Erreur 404</p>
+                <h1 className="mt-4 font-marcellus text-5xl text-cocoa md:text-6xl">Page introuvable</h1>
+                <p className="mt-4 max-w-md text-lg text-cocoa/70">
+                    La page que vous recherchez n&apos;existe pas ou a été déplacée.
+                </p>
+                <Link
+                    to="/"
+                    className="mt-10 inline-flex items-center gap-2 rounded-full bg-emerald px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald/90"
+                >
+                    Retour à l&apos;accueil
+                </Link>
+            </section>
+        </Page>
+    );
+}
+
 function ScrollToTop() {
     const { pathname } = useLocation();
     
@@ -1992,12 +2267,13 @@ function IvoireApp({ advertisement }: { advertisement?: Advertisement | null }) 
                     <Route path="/" element={<Home />} />
                     <Route path="/a-propos" element={<APropos />} />
                     <Route path="/contenus" element={<Contenus />} />
+                    <Route path="/contenus/cours/:slug" element={<CourseDetail />} />
                     <Route path="/contenus/:slug" element={<ContentDetail />} />
                     <Route path="/galerie" element={<Galerie />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/connexion" element={<Login />} />
                     <Route path="/inscription" element={<Register />} />
-                    <Route path="*" element={<Home />} />
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </AnimatePresence>
             {!isAuthRoute && <Footer />}
@@ -2007,7 +2283,18 @@ function IvoireApp({ advertisement }: { advertisement?: Advertisement | null }) 
 }
 
 export default function Welcome() {
-    const { testimonials = [], contents = [], categories = [], currentContent = null, advertisement = null, isAuthenticated = false, isAdmin = false } = usePage<PageProps>().props;
+    const {
+        testimonials = [],
+        contents = [],
+        courses = [],
+        categories = [],
+        currentContent = null,
+        currentCourse = null,
+        advertisement = null,
+        isAuthenticated = false,
+        isAdmin = false,
+        unlockedCourseIds = [],
+    } = usePage<PageProps>().props;
 
     return (
         <>
@@ -2016,7 +2303,19 @@ export default function Welcome() {
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
                 <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet" />
             </Head>
-            <AppContext.Provider value={{ testimonials, contents, categories, currentContent, isAuthenticated, isAdmin }}>
+            <AppContext.Provider
+                value={{
+                    testimonials,
+                    contents,
+                    courses,
+                    categories,
+                    currentContent,
+                    currentCourse,
+                    isAuthenticated,
+                    isAdmin,
+                    unlockedCourseIds,
+                }}
+            >
                 <BrowserRouter>
                     <IvoireApp advertisement={advertisement} />
                 </BrowserRouter>
