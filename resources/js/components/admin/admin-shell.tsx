@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -164,7 +164,7 @@ export function AdminHeader({
     subtitle,
     actions,
     user,
-    isAdmin = true,
+    isAdmin = false,
     onMenu,
 }: {
     title: string;
@@ -212,18 +212,26 @@ export function AdminShell({
     subtitle,
     actions,
     user,
-    isAdmin = true,
+    isAdmin: isAdminProp,
     children,
 }: {
     current: string;
     title: string;
     subtitle?: string;
     actions?: ReactNode;
-    user: { name: string };
+    user: { name: string; role?: string };
     isAdmin?: boolean;
     children: ReactNode;
 }) {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const page = usePage<{ auth?: { user?: { role?: string } }; isAdmin?: boolean }>().props;
+
+    // Source of truth: explicit prop → shared Inertia isAdmin → role utilisateur
+    const role = user.role ?? page.auth?.user?.role;
+    const isAdmin =
+        isAdminProp ??
+        page.isAdmin ??
+        role === 'administrateur';
 
     return (
         <div className="tpl-ivoire relative min-h-screen overflow-x-hidden bg-[#f7f3eb]">
