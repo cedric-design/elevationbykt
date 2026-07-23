@@ -18,6 +18,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\SubscriberController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Page d'accueil SPA — toutes ces routes passent par HomeController
 // pour injecter les témoignages et l'état de connexion
@@ -50,7 +51,8 @@ Route::middleware(['auth'])->group(function () {
 // Routes admin uniquement
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', fn() => redirect()->route('espace'));
-    
+    Route::get('guide', fn () => Inertia::render('admin/guide'))->name('guide');
+
     Route::get('temoignages', [TestimonialController::class, 'index'])->name('testimonials.index');
     Route::post('temoignages', [TestimonialController::class, 'store'])->name('testimonials.store');
     Route::put('temoignages/{testimonial}', [TestimonialController::class, 'update'])->name('testimonials.update');

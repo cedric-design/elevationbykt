@@ -18,24 +18,62 @@ import {
     Menu,
     X,
     ArrowRight,
+    CircleHelp,
     type LucideIcon,
 } from 'lucide-react';
 import ElevationLogo from '@/components/ivoire/elevation-logo';
 
-const ADMIN_NAV = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
-    { icon: BookOpen, label: 'Cours', href: '/admin/cours' },
-    { icon: Video, label: 'Contenus', href: '/admin/contenus' },
-    { icon: CalendarDays, label: 'Événements', href: '/admin/evenements' },
-    { icon: Inbox, label: 'Messages', href: '/admin/contact' },
-    { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
-    { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
-    { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
-    { icon: Megaphone, label: 'Publicité', href: '/admin/publicites' },
-    { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
+type NavItem = { icon: LucideIcon; label: string; href: string };
+
+type NavSection = {
+    title: string;
+    items: NavItem[];
+};
+
+const ADMIN_NAV_SECTIONS: NavSection[] = [
+    {
+        title: 'Général',
+        items: [
+            { icon: LayoutDashboard, label: 'Dashboard', href: '/espace' },
+        ],
+    },
+    {
+        title: 'Offre',
+        items: [
+            { icon: BookOpen, label: 'Cours', href: '/admin/cours' },
+            { icon: Video, label: 'Contenus', href: '/admin/contenus' },
+        ],
+    },
+    {
+        title: 'Communauté',
+        items: [
+            { icon: CalendarDays, label: 'Événements', href: '/admin/evenements' },
+            { icon: MessageSquareQuote, label: 'Témoignages', href: '/admin/temoignages' },
+            { icon: Inbox, label: 'Messages', href: '/admin/contact' },
+        ],
+    },
+    {
+        title: 'Diffusion',
+        items: [
+            { icon: Mail, label: 'Newsletter', href: '/admin/newsletter' },
+            { icon: Megaphone, label: 'Publicité', href: '/admin/publicites' },
+        ],
+    },
+    {
+        title: 'Administration',
+        items: [
+            { icon: Users, label: 'Équipe', href: '/admin/collaborateurs' },
+            { icon: UsersRound, label: 'Utilisateurs', href: '/admin/utilisateurs' },
+        ],
+    },
 ];
 
-const CLIENT_NAV = [
+const TUTO_NAV_ITEM: NavItem = {
+    icon: CircleHelp,
+    label: 'Tuto',
+    href: '/admin/guide',
+};
+const CLIENT_NAV: NavItem[] = [
     { icon: LayoutDashboard, label: 'Mon espace', href: '/espace' },
     { icon: BookOpen, label: 'Mes cours', href: '/espace' },
 ];
@@ -62,29 +100,72 @@ interface AdminNotifications {
     messages: AdminNotificationMessage[];
 }
 
-function NavLinks({ current, items, onNavigate }: { current: string; items: typeof ADMIN_NAV; onNavigate?: () => void }) {
+function NavItemLink({
+    item,
+    current,
+    onNavigate,
+}: {
+    item: NavItem;
+    current: string;
+    onNavigate?: () => void;
+}) {
+    const Icon = item.icon;
+    const active = item.href === current;
+
+    return (
+        <a
+            href={item.href}
+            onClick={onNavigate}
+            className={`group relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+                active
+                    ? 'bg-gradient-to-r from-emerald to-emerald/85 text-sand shadow-lg shadow-emerald/25'
+                    : 'text-sand/55 hover:bg-white/[0.05] hover:pl-5 hover:text-sand'
+            }`}
+        >
+            <Icon size={17} className={active ? '' : 'transition group-hover:scale-110'} />
+            {item.label}
+            {active && <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-honey" />}
+        </a>
+    );
+}
+
+function AdminNavLinks({ current, onNavigate }: { current: string; onNavigate?: () => void }) {
+    return (
+        <div className="mt-5 flex min-h-0 flex-1 flex-col">
+            <nav className="flex-1 space-y-5 overflow-y-auto px-4 pb-2">
+                {ADMIN_NAV_SECTIONS.map((section) => (
+                    <div key={section.title}>
+                        <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-sand/30">
+                            {section.title}
+                        </p>
+                        <div className="space-y-1">
+                            {section.items.map((item) => (
+                                <NavItemLink
+                                    key={item.href + item.label}
+                                    item={item}
+                                    current={current}
+                                    onNavigate={onNavigate}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </nav>
+
+            <div className="shrink-0 border-t border-white/[0.06] px-4 py-3">
+                <NavItemLink item={TUTO_NAV_ITEM} current={current} onNavigate={onNavigate} />
+            </div>
+        </div>
+    );
+}
+
+function ClientNavLinks({ current, onNavigate }: { current: string; onNavigate?: () => void }) {
     return (
         <nav className="mt-6 flex-1 space-y-1 overflow-y-auto px-4">
             <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.22em] text-sand/30">Menu</p>
-            {items.map(({ icon: Icon, label, href }) => {
-                const active = href === current;
-                return (
-                    <a
-                        key={label}
-                        href={href}
-                        onClick={onNavigate}
-                        className={`group relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
-                            active
-                                ? 'bg-gradient-to-r from-emerald to-emerald/85 text-sand shadow-lg shadow-emerald/25'
-                                : 'text-sand/55 hover:bg-white/[0.05] hover:pl-5 hover:text-sand'
-                        }`}
-                    >
-                        <Icon size={17} className={active ? '' : 'transition group-hover:scale-110'} />
-                        {label}
-                        {active && <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-honey" />}
-                    </a>
-                );
-            })}
+            {CLIENT_NAV.map((item) => (
+                <NavItemLink key={item.label} item={item} current={current} onNavigate={onNavigate} />
+            ))}
         </nav>
     );
 }
@@ -136,15 +217,13 @@ function SidebarFooter({ user, isAdmin }: { user: { name: string }; isAdmin: boo
 }
 
 export function AdminSidebar({ current, user, isAdmin }: { current: string; user: { name: string }; isAdmin: boolean }) {
-    const nav = isAdmin ? ADMIN_NAV : CLIENT_NAV;
-
     return (
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col overflow-hidden bg-gradient-to-b from-cocoa via-[#261c13] to-[#1a120b] lg:flex">
             <div className="pointer-events-none absolute -left-16 top-24 h-48 w-48 rounded-full bg-emerald/20 blur-3xl" />
             <div className="pointer-events-none absolute -right-20 bottom-32 h-56 w-56 rounded-full bg-honey/10 blur-3xl" />
             <div className="relative flex h-full flex-col">
                 <SidebarBrand />
-                <NavLinks current={current} items={nav} />
+                {isAdmin ? <AdminNavLinks current={current} /> : <ClientNavLinks current={current} />}
                 <SidebarFooter user={user} isAdmin={isAdmin} />
             </div>
         </aside>
@@ -152,7 +231,6 @@ export function AdminSidebar({ current, user, isAdmin }: { current: string; user
 }
 
 function MobileSidebar({ open, onClose, current, user, isAdmin }: { open: boolean; onClose: () => void; current: string; user: { name: string }; isAdmin: boolean }) {
-    const nav = isAdmin ? ADMIN_NAV : CLIENT_NAV;
     return (
         <AnimatePresence>
             {open && (
@@ -177,7 +255,11 @@ function MobileSidebar({ open, onClose, current, user, isAdmin }: { open: boolea
                                 <X size={18} />
                             </button>
                         </div>
-                        <NavLinks current={current} items={nav} onNavigate={onClose} />
+                        {isAdmin ? (
+                            <AdminNavLinks current={current} onNavigate={onClose} />
+                        ) : (
+                            <ClientNavLinks current={current} onNavigate={onClose} />
+                        )}
                         <SidebarFooter user={user} isAdmin={isAdmin} />
                     </motion.aside>
                 </>
