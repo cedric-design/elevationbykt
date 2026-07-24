@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\RegisterResponse;
+use App\Services\SkoolClient;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
         $this->app->singleton(RegisterResponseContract::class, RegisterResponse::class);
+
+        $this->app->singleton(SkoolClient::class, fn () => new SkoolClient(
+            webhookUrl: config('services.skool.webhook_url'),
+        ));
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Enums\CourseAccessStatus;
 use App\Mail\CourseAccessMail;
 use App\Models\Course;
 use App\Models\CourseAccess;
+use App\Services\SkoolClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -13,6 +14,10 @@ use Inertia\Inertia;
 
 class CourseAccessController extends Controller
 {
+    public function __construct(private readonly SkoolClient $skool)
+    {
+    }
+
     public function request(Request $request, Course $course): RedirectResponse
     {
         $user = $request->user();
@@ -54,6 +59,12 @@ class CourseAccessController extends Controller
         $access->link_sent_at = now();
         $access->accessed_at = $access->accessed_at ?? now();
         $access->save();
+
+        // Unlock the member directly on Skool via the group's "Automate via
+        // Webhook" endpoint (no Zapier). If Skool is unreachable we still send
+        // the invite link by email as a fallback — the access record above is
+        // the source of truth and the call can be retried.
+        $this->skool->invite($user->email);
 
         Mail::to($user->email)->send(new CourseAccessMail($user, $course, $access->private_link));
 

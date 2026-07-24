@@ -342,66 +342,91 @@ function Nav() {
 }
 
 function Hero() {
+    const ref = useRef<HTMLElement>(null);
+    const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
+    const y = useTransform(scrollYProgress, [0, 1], ['0%', '18%']);
+    const rotate = useTransform(scrollYProgress, [0, 1], [0, 3]);
+
     return (
-        <section className="relative flex min-h-[100svh] items-end justify-center overflow-hidden pb-14 pt-24 sm:pb-16 md:pb-20">
-            {/* Portrait studio — ancre sur le visage (~50% / 22%) */}
-            <img
-                src="/kadhy-hero-studio.jpg"
-                alt="Kadhy Touré — Studio"
-                className="absolute inset-0 h-full w-full object-cover object-[50%_18%] sm:object-[50%_20%] md:object-[50%_22%] lg:object-[50%_24%]"
-            />
-            {/* Haut clair pour le visage ; bas sombre pour le texte */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-[48%] bg-gradient-to-t from-cocoa via-cocoa/75 to-transparent" />
-
-            <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-6 pb-2 text-center">
-                <motion.p
-                    initial={{ opacity: 0, y: 18 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="ivoire-serif text-[2.75rem] leading-[0.92] tracking-[0.04em] text-sand sm:text-5xl md:text-6xl lg:text-7xl"
-                >
-                    ÉLÉVATION
-                    <span className="mt-2 block text-[1.15rem] font-normal tracking-[0.22em] text-sand/90 sm:text-2xl md:text-3xl">
-                        by Kadhy
-                    </span>
-                </motion.p>
-
-                <motion.p
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.22, duration: 0.7 }}
-                    className="ivoire-serif mt-5 text-xl text-honey sm:mt-6 sm:text-2xl md:text-3xl"
-                >
-                    {HERO_COPY.headline}
-                </motion.p>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.7 }}
-                    className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10 sm:gap-4"
-                >
-                    <Magnetic strength={0.16}>
-                        <a
-                            href="#vision"
-                            className="inline-block rounded-full bg-sand px-7 py-3.5 text-sm font-medium text-cocoa transition hover:bg-honey sm:text-base"
+        <section ref={ref} className="ivoire-paper relative overflow-hidden">
+            <FloatingOrbs count={4} colors={IVOIRE_ORBS} className="opacity-70" />
+            <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 pt-40 pb-8 md:grid-cols-[1.05fr_0.95fr]">
+                <div>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
+                        <Kicker>{PROFILE.roles.join(' · ')}</Kicker>
+                    </motion.div>
+                    <h1 className="ivoire-serif mt-5 text-6xl leading-[0.95] text-cocoa sm:text-7xl md:text-8xl">
+                        <SplitLines lines={['ELEVATION', 'by Kadhy']} delay={0.15} />
+                    </h1>
+                    <motion.span
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ delay: 0.55, duration: 0.8 }}
+                        className="mt-4 block h-1 w-20 origin-left rounded-full bg-gradient-to-r from-emerald via-honey to-terracotta"
+                    />
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35, duration: 0.7 }}
+                        className="mt-7 max-w-md text-lg leading-relaxed text-cocoa/75"
+                    >
+                        Star du cinéma ivoirien et présentatrice de « Les Femmes d'Ici » sur la NCI. Films, émissions, cours et masterclass —{' '}
+                        <em className="ivoire-serif text-terracotta">{PROFILE.tagline}</em>
+                    </motion.p>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.7 }}
+                        className="mt-9 flex flex-wrap gap-4"
+                    >
+                        <Magnetic strength={0.18}>
+                            <Link to="/contenus" className="inline-block rounded-full bg-emerald px-7 py-3.5 font-medium text-sand shadow-lg shadow-emerald/25 transition hover:bg-cocoa hover:shadow-cocoa/20">
+                                Voir les contenus
+                            </Link>
+                        </Magnetic>
+                        <Magnetic strength={0.14}>
+                            <Link to="/a-propos" className="inline-block rounded-full border border-cocoa/25 px-7 py-3.5 font-medium text-cocoa transition hover:border-terracotta hover:text-terracotta">
+                                Son parcours
+                            </Link>
+                        </Magnetic>
+                    </motion.div>
+                </div>
+                <TiltFrame intensity={9}>
+                    <motion.div style={{ y, rotate }} className="relative mx-auto w-full max-w-sm">
+                        <div className="ivoire-halo pointer-events-none" aria-hidden />
+                        <motion.div
+                            animate={{ scale: [1, 1.03, 1] }}
+                            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                            className="absolute -inset-4 rounded-[999px] bg-gradient-to-b from-honey/30 to-terracotta/10 blur-2xl"
+                        />
+                        <div className="ivoire-arch ivoire-warm-glow relative border-4 border-sand">
+                            <SmartImage src={IMG.portrait} alt="Kadhy Touré" className="ivoire-arch aspect-[4/5]" imgClass="transition duration-700 hover:scale-105" fallback={FALLBACK} />
+                        </div>
+                        <motion.div
+                            animate={{ y: [0, -8, 0] }}
+                            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                            className="absolute -bottom-5 -left-4 flex items-center gap-3 rounded-2xl border border-cocoa/10 bg-sand px-4 py-3 shadow-lg"
                         >
-                            {HERO_COPY.ctaDiscover}
-                        </a>
-                    </Magnetic>
-                    <Magnetic strength={0.12}>
-                        <a
-                            href={SKOOL_URL}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block rounded-full border border-sand/50 px-7 py-3.5 text-sm font-medium text-sand transition hover:border-honey hover:text-honey sm:text-base"
-                        >
-                            {HERO_COPY.ctaJoin}
-                        </a>
-                    </Magnetic>
-                </motion.div>
+                            <motion.span
+                                animate={{ rotate: [0, 15, -15, 0] }}
+                                transition={{ duration: 3, repeat: Infinity }}
+                                className="grid h-9 w-9 place-items-center rounded-full bg-honey text-cocoa"
+                            >
+                                ★
+                            </motion.span>
+                            <div className="text-sm">
+                                <div className="font-semibold text-cocoa">NISA d'Or 2023</div>
+                                <div className="text-cocoa/55">Lauréate</div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                </TiltFrame>
             </div>
+            <Marquee
+                items={[...PROFILE.roles, "NISA d'Or 2023", PROFILE.company, 'Abidjan · CI']}
+                className="border-y border-cocoa/10 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-cocoa/40"
+                speed={32}
+            />
         </section>
     );
 }
@@ -466,7 +491,7 @@ function ContentCard({ content, index }: { content: Content; index: number }) {
                                 className="h-full w-full object-cover"
                                 onEnded={() => setPlaying(false)}
                             />
-                            <motion.div 
+                            <motion.div
                                 className={`absolute inset-0 flex items-center justify-center bg-cocoa/30 transition ${playing ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`}
                                 onClick={toggleVideo}
                             >
@@ -495,9 +520,8 @@ function ContentCard({ content, index }: { content: Content; index: number }) {
                             </div>
                         </>
                     )}
-                    <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-medium ${
-                        content.type === 'paid' ? 'bg-honey text-cocoa' : 'bg-emerald text-sand'
-                    }`}>
+                    <span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-medium ${content.type === 'paid' ? 'bg-honey text-cocoa' : 'bg-emerald text-sand'
+                        }`}>
                         {content.type === 'paid' ? `${content.price.toLocaleString()} XOF` : 'Gratuit'}
                     </span>
                     {content.is_featured && (
@@ -518,11 +542,10 @@ function ContentCard({ content, index }: { content: Content; index: number }) {
                         <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            className={`mt-4 w-full rounded-full py-2.5 text-sm font-medium transition ${
-                                content.type === 'paid'
+                            className={`mt-4 w-full rounded-full py-2.5 text-sm font-medium transition ${content.type === 'paid'
                                     ? 'bg-honey text-cocoa hover:bg-honey/80'
                                     : 'border border-emerald/40 text-emerald hover:bg-emerald hover:text-sand'
-                            }`}
+                                }`}
                         >
                             {content.type === 'paid' ? 'Acheter' : 'Voir le contenu'}
                         </motion.button>
@@ -535,7 +558,7 @@ function ContentCard({ content, index }: { content: Content; index: number }) {
 
 function DynamicContentGrid({ items, limit }: { items: Content[]; limit?: number }) {
     const displayed = limit ? items.slice(0, limit) : items;
-    
+
     if (displayed.length === 0) {
         return (
             <div className="rounded-2xl border border-cocoa/10 bg-white/50 p-12 text-center">
@@ -1031,11 +1054,10 @@ function EventsSection() {
                                             {event.type_label}
                                         </span>
                                         <span
-                                            className={`rounded-full px-3 py-1 text-xs font-medium ${
-                                                event.access_mode === 'open'
+                                            className={`rounded-full px-3 py-1 text-xs font-medium ${event.access_mode === 'open'
                                                     ? 'bg-emerald/10 text-emerald'
                                                     : 'bg-cocoa/8 text-cocoa/60'
-                                            }`}
+                                                }`}
                                         >
                                             {event.access_mode_label}
                                         </span>
@@ -1381,7 +1403,7 @@ function Newsletter() {
 
 function Testimonials() {
     const { testimonials } = useContext(AppContext);
-    
+
     if (testimonials.length === 0) {
         return null;
     }
@@ -1672,11 +1694,10 @@ function APropos() {
                                 {VISION_CLOSING.map((p, i) => (
                                     <Reveal key={i} delay={i * 0.06}>
                                         <p
-                                            className={`leading-relaxed ${
-                                                i >= VISION_CLOSING.length - 2
+                                            className={`leading-relaxed ${i >= VISION_CLOSING.length - 2
                                                     ? 'ivoire-serif text-xl text-cocoa md:text-2xl'
                                                     : 'text-lg text-cocoa/80'
-                                            }`}
+                                                }`}
                                         >
                                             {p}
                                         </p>
@@ -1757,13 +1778,12 @@ function Contenus() {
                                 <button
                                     key={value}
                                     onClick={() => setTypeFilter(value)}
-                                    className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                                        typeFilter === value
+                                    className={`rounded-full px-5 py-2 text-sm font-medium transition ${typeFilter === value
                                             ? value === 'paid'
                                                 ? 'bg-honey text-cocoa'
                                                 : 'bg-emerald text-sand'
                                             : 'border border-cocoa/15 text-cocoa/70 hover:border-emerald hover:text-emerald'
-                                    }`}
+                                        }`}
                                 >
                                     {label}
                                 </button>
@@ -2064,7 +2084,7 @@ function ContentDetail() {
                     <Reveal>
                         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald/20 via-honey/10 to-terracotta/20">
                             {isPaid ? (
-                                <div 
+                                <div
                                     className="protected-content relative aspect-video"
                                     onContextMenu={(e) => e.preventDefault()}
                                     onCopy={(e) => e.preventDefault()}
@@ -2108,9 +2128,8 @@ function ContentDetail() {
                             <h1 className="ivoire-serif mt-2 text-4xl text-cocoa lg:text-5xl">{content.title}</h1>
 
                             <div className="mt-4 flex items-center gap-3">
-                                <span className={`rounded-full px-4 py-1.5 text-sm font-medium ${
-                                    isPaid ? 'bg-honey/20 text-honey' : 'bg-emerald/15 text-emerald'
-                                }`}>
+                                <span className={`rounded-full px-4 py-1.5 text-sm font-medium ${isPaid ? 'bg-honey/20 text-honey' : 'bg-emerald/15 text-emerald'
+                                    }`}>
                                     {isPaid ? `${content.price.toLocaleString()} ${content.currency}` : 'Gratuit'}
                                 </span>
                                 {content.is_featured && (
@@ -2403,11 +2422,10 @@ function Contact() {
                                                         key={t.id}
                                                         type="button"
                                                         onClick={() => setTopic(t.id)}
-                                                        className={`rounded-full px-4 py-2 text-xs font-medium transition ${
-                                                            topic === t.id
+                                                        className={`rounded-full px-4 py-2 text-xs font-medium transition ${topic === t.id
                                                                 ? 'bg-cocoa text-sand'
                                                                 : 'border border-cocoa/15 bg-sand/60 text-cocoa/70 hover:border-cocoa/30 hover:text-cocoa'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {t.label}
                                                     </button>
@@ -2607,13 +2625,11 @@ function AuthField({
                     autoComplete={autoComplete}
                     value={value}
                     onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-                    className={`w-full rounded-xl border bg-white px-4 py-3.5 text-cocoa shadow-sm outline-none transition placeholder:text-cocoa/40 focus:shadow-[0_0_0_3px_rgba(199,154,75,0.2)] ${
-                        isPassword ? 'pr-16' : ''
-                    } ${
-                        error
+                    className={`w-full rounded-xl border bg-white px-4 py-3.5 text-cocoa shadow-sm outline-none transition placeholder:text-cocoa/40 focus:shadow-[0_0_0_3px_rgba(199,154,75,0.2)] ${isPassword ? 'pr-16' : ''
+                        } ${error
                             ? 'border-terracotta focus:border-terracotta'
                             : 'border-cocoa/20 focus:border-honey'
-                    }`}
+                        }`}
                 />
                 {isPassword && (
                     <button
@@ -3015,7 +3031,7 @@ function AdvertisementPopup({ ad }: { ad: Advertisement }) {
                         className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-cocoa/80 text-sand transition hover:bg-cocoa"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
                         </svg>
                     </button>
                     {ad.link ? (
@@ -3086,11 +3102,11 @@ function NotFound() {
 
 function ScrollToTop() {
     const { pathname } = useLocation();
-    
+
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [pathname]);
-    
+
     return null;
 }
 

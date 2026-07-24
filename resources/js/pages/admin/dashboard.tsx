@@ -128,7 +128,7 @@ const TOPIC_LABELS: Record<string, string> = {
 };
 
 const rise = {
-    initial: { opacity: 0, y: 18 },
+    initial: { opacity: 0, y: 8 },
     animate: { opacity: 1, y: 0 },
 };
 
@@ -159,45 +159,38 @@ function HeroBanner({ name, stats, isAdmin }: { name: string; stats: Stats; isAd
     return (
         <motion.div
             {...rise}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="relative overflow-hidden rounded-[2rem] bg-cocoa text-sand"
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="relative overflow-hidden rounded-2xl bg-cocoa text-sand"
         >
-            <div
-                className="pointer-events-none absolute inset-0 opacity-80"
-                style={{
-                    backgroundImage:
-                        'radial-gradient(ellipse 70% 80% at 100% 0%, rgba(199,154,75,0.35), transparent 55%), radial-gradient(ellipse 50% 60% at 0% 100%, rgba(31,107,82,0.25), transparent 50%)',
-                }}
-            />
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,transparent_40%,rgba(255,255,255,0.04)_50%,transparent_60%)]" />
+            <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-honey/[0.09] blur-3xl" />
 
-            <div className="relative grid gap-8 p-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end lg:p-10">
+            <div className="relative grid gap-8 p-7 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:p-10">
                 <div>
-                    <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-honey">
+                    <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-honey/90">
                         <Sparkles size={12} />
                         {isAdmin ? 'Espace admin' : 'Mon espace'}
                     </span>
-                    <h2 className="ivoire-serif mt-4 text-4xl leading-[1.05] sm:text-5xl">
+                    <h2 className="ivoire-serif mt-3 text-3xl leading-tight sm:text-4xl">
                         Bonjour, {firstName}.
                     </h2>
-                    <p className="mt-3 max-w-md text-sm leading-relaxed text-sand/65 sm:text-base">
+                    <p className="mt-3 max-w-md text-sm leading-relaxed text-sand/60">
                         {isAdmin
                             ? 'Pilote ÉLÉVATION : contenus, événements, messages et communauté — tout au même endroit.'
                             : "Accède à tes formations et poursuis ton parcours d'élévation."}
                     </p>
 
                     {isAdmin && (
-                        <div className="mt-8 flex flex-wrap gap-3">
+                        <div className="mt-7 flex flex-wrap gap-3">
                             <a
                                 href="/admin/evenements"
-                                className="inline-flex items-center gap-2 rounded-full bg-honey px-5 py-2.5 text-sm font-medium text-cocoa transition hover:bg-sand"
+                                className="inline-flex items-center gap-2 rounded-full bg-honey px-5 py-2.5 text-sm font-medium text-cocoa transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-honey/20 active:translate-y-0"
                             >
                                 <CalendarDays size={15} />
                                 Créer un RDV
                             </a>
                             <a
                                 href="/admin/contact"
-                                className="inline-flex items-center gap-2 rounded-full border border-sand/25 px-5 py-2.5 text-sm font-medium text-sand transition hover:border-honey hover:text-honey"
+                                className="inline-flex items-center gap-2 rounded-full border border-sand/20 px-5 py-2.5 text-sm font-medium text-sand transition-all duration-200 hover:-translate-y-0.5 hover:border-honey/60 hover:text-honey active:translate-y-0"
                             >
                                 <Inbox size={15} />
                                 Messages
@@ -213,7 +206,7 @@ function HeroBanner({ name, stats, isAdmin }: { name: string; stats: Stats; isAd
                     {!isAdmin && (
                         <a
                             href="#mes-cours"
-                            className="mt-6 inline-flex items-center gap-2 rounded-full bg-honey px-6 py-3 text-sm font-semibold text-cocoa transition hover:bg-sand"
+                            className="mt-6 inline-flex items-center gap-2 rounded-full bg-honey px-6 py-3 text-sm font-semibold text-cocoa transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-honey/20 active:translate-y-0"
                         >
                             <BookOpen size={16} />
                             Voir mes cours
@@ -231,7 +224,7 @@ function HeroBanner({ name, stats, isAdmin }: { name: string; stats: Stats; isAd
                         ].map((item) => (
                             <div
                                 key={item.label}
-                                className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-4 backdrop-blur-sm"
+                                className="rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-4 transition-colors duration-200 hover:border-white/[0.16]"
                             >
                                 <div className="ivoire-serif text-3xl text-sand">{item.value}</div>
                                 <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-sand/45">
@@ -260,8 +253,8 @@ function RecentItem({
 }) {
     const palette = ['bg-emerald/10 text-emerald', 'bg-honey/15 text-honey', 'bg-terracotta/10 text-terracotta', 'bg-cocoa/8 text-cocoa'];
     return (
-        <div className="flex items-center gap-4 rounded-xl px-3 py-3 transition hover:bg-sand/70">
-            <div className={`ivoire-serif grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm ${palette[index % palette.length]}`}>
+        <div className="group flex items-center gap-4 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-sand/60">
+            <div className={`ivoire-serif grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm transition-transform duration-200 group-hover:scale-105 ${palette[index % palette.length]}`}>
                 {title.charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
@@ -348,7 +341,7 @@ function AdminDashboard({
                                 <a
                                     key={msg.id}
                                     href="/admin/contact"
-                                    className="block rounded-xl px-4 py-3 transition hover:bg-sand/70"
+                                    className="block rounded-xl px-4 py-3 transition-colors duration-200 hover:bg-sand/60"
                                 >
                                     <div className="flex items-center justify-between gap-3">
                                         <p className="truncate text-sm font-medium text-cocoa">{msg.name}</p>
@@ -388,7 +381,7 @@ function AdminDashboard({
                                 <a
                                     key={event.id}
                                     href={`/admin/evenements/${event.id}/inscrits`}
-                                    className="block rounded-xl px-4 py-3 transition hover:bg-sand/70"
+                                    className="block rounded-xl px-4 py-3 transition-colors duration-200 hover:bg-sand/60"
                                 >
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="rounded-full bg-cocoa/8 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-cocoa/55">
@@ -501,7 +494,7 @@ function ClientDashboard({
                 <SectionTitle title="Mes cours" />
 
                 {myCourses.length === 0 ? (
-                    <div className="rounded-[1.75rem] border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
+                    <div className="rounded-2xl border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
                         <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-emerald/10">
                             <BookOpen size={24} className="text-emerald" />
                         </div>
@@ -515,11 +508,15 @@ function ClientDashboard({
                         {myCourses.map((course) => (
                             <div
                                 key={course.id}
-                                className="overflow-hidden rounded-[1.5rem] border border-cocoa/[0.07] bg-white/90 shadow-sm"
+                                className="group overflow-hidden rounded-2xl border border-cocoa/[0.08] bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cocoa/[0.14] hover:shadow-md"
                             >
-                                <div className="aspect-[16/9] bg-cocoa/5">
+                                <div className="aspect-[16/9] overflow-hidden bg-cocoa/5">
                                     {course.cover_image ? (
-                                        <img src={course.cover_image} alt={course.title} className="h-full w-full object-cover" />
+                                        <img
+                                            src={course.cover_image}
+                                            alt={course.title}
+                                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                        />
                                     ) : (
                                         <div className="flex h-full items-center justify-center text-cocoa/25">
                                             <ImageIcon size={28} />
@@ -539,7 +536,7 @@ function ClientDashboard({
                                             href={course.private_link}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="inline-flex items-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-honey hover:text-cocoa"
+                                            className="inline-flex items-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition-all duration-200 hover:-translate-y-0.5 hover:bg-honey hover:text-cocoa active:translate-y-0"
                                         >
                                             <ExternalLink size={15} />
                                             Ouvrir sur Skool
@@ -548,7 +545,7 @@ function ClientDashboard({
                                             type="button"
                                             onClick={() => requestAccess(course.id)}
                                             disabled={pendingId === course.id}
-                                            className="inline-flex items-center gap-2 rounded-full border border-cocoa/15 px-4 py-2.5 text-sm font-medium text-cocoa transition hover:bg-sand disabled:opacity-50"
+                                            className="inline-flex items-center gap-2 rounded-full border border-cocoa/15 px-4 py-2.5 text-sm font-medium text-cocoa transition-all duration-200 hover:-translate-y-0.5 hover:bg-sand active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
                                         >
                                             <Send size={15} />
                                             {pendingId === course.id ? 'Envoi...' : 'Renvoyer par email'}
@@ -565,7 +562,7 @@ function ClientDashboard({
                 <SectionTitle title="Cours disponibles" />
 
                 {availableCourses.length === 0 ? (
-                    <div className="rounded-[1.75rem] border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
+                    <div className="rounded-2xl border border-dashed border-cocoa/15 bg-white/60 p-10 text-center">
                         <p className="text-sm text-cocoa/50">Aucun cours publié pour le moment.</p>
                     </div>
                 ) : (
@@ -575,11 +572,15 @@ function ClientDashboard({
                             return (
                                 <div
                                     key={course.id}
-                                    className="flex flex-col overflow-hidden rounded-[1.5rem] border border-cocoa/[0.07] bg-white/90 shadow-sm"
+                                    className="group flex flex-col overflow-hidden rounded-2xl border border-cocoa/[0.08] bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cocoa/[0.14] hover:shadow-md"
                                 >
-                                    <div className="aspect-[16/9] bg-cocoa/5">
+                                    <div className="aspect-[16/9] overflow-hidden bg-cocoa/5">
                                         {course.cover_image ? (
-                                            <img src={course.cover_image} alt={course.title} className="h-full w-full object-cover" />
+                                            <img
+                                                src={course.cover_image}
+                                                alt={course.title}
+                                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                            />
                                         ) : (
                                             <div className="flex h-full items-center justify-center text-cocoa/25">
                                                 <ImageIcon size={28} />
@@ -600,7 +601,7 @@ function ClientDashboard({
                                                     href={course.access!.private_link!}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-honey hover:text-cocoa"
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition-all duration-200 hover:bg-honey hover:text-cocoa active:scale-[0.99]"
                                                 >
                                                     <ExternalLink size={15} />
                                                     Ouvrir le cours
@@ -610,7 +611,7 @@ function ClientDashboard({
                                                     type="button"
                                                     onClick={() => requestAccess(course.id)}
                                                     disabled={pendingId === course.id || !course.has_invite_link}
-                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition hover:bg-honey hover:text-cocoa disabled:cursor-not-allowed disabled:opacity-50"
+                                                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-cocoa px-4 py-2.5 text-sm font-medium text-sand transition-all duration-200 hover:bg-honey hover:text-cocoa active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50"
                                                     title={!course.has_invite_link ? 'Lien non configuré' : undefined}
                                                 >
                                                     <Send size={15} />

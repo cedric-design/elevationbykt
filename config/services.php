@@ -36,8 +36,9 @@ return [
     ],
 
     'skool' => [
+        // Native "Automate via Webhook" URL (Group → Settings → Invite).
+        // The token in the URL is the only credential — Skool has no API key.
         'webhook_url' => env('SKOOL_WEBHOOK_URL'),
-        'webhook_secret' => env('SKOOL_WEBHOOK_SECRET'),
     ],
 
 ];

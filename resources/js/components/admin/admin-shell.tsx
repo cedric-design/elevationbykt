@@ -75,7 +75,7 @@ const TUTO_NAV_ITEM: NavItem = {
 };
 const CLIENT_NAV: NavItem[] = [
     { icon: LayoutDashboard, label: 'Mon espace', href: '/espace' },
-    { icon: BookOpen, label: 'Mes cours', href: '/espace' },
+    { icon: BookOpen, label: 'Mes cours', href: '/espace#mes-cours' },
 ];
 
 const TOPIC_LABELS: Record<string, string> = {
@@ -116,13 +116,16 @@ function NavItemLink({
         <a
             href={item.href}
             onClick={onNavigate}
-            className={`group relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
+            className={`group relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors duration-200 ${
                 active
-                    ? 'bg-gradient-to-r from-emerald to-emerald/85 text-sand shadow-lg shadow-emerald/25'
-                    : 'text-sand/55 hover:bg-white/[0.05] hover:pl-5 hover:text-sand'
+                    ? 'bg-emerald text-sand'
+                    : 'text-sand/55 hover:bg-white/[0.05] hover:text-sand'
             }`}
         >
-            <Icon size={17} className={active ? '' : 'transition group-hover:scale-110'} />
+            <Icon
+                size={17}
+                className={`shrink-0 transition-transform duration-200 ${active ? '' : 'group-hover:translate-x-0.5'}`}
+            />
             {item.label}
             {active && <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-honey" />}
         </a>
@@ -219,8 +222,7 @@ function SidebarFooter({ user, isAdmin }: { user: { name: string }; isAdmin: boo
 export function AdminSidebar({ current, user, isAdmin }: { current: string; user: { name: string }; isAdmin: boolean }) {
     return (
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col overflow-hidden bg-gradient-to-b from-cocoa via-[#261c13] to-[#1a120b] lg:flex">
-            <div className="pointer-events-none absolute -left-16 top-24 h-48 w-48 rounded-full bg-emerald/20 blur-3xl" />
-            <div className="pointer-events-none absolute -right-20 bottom-32 h-56 w-56 rounded-full bg-honey/10 blur-3xl" />
+            <div className="pointer-events-none absolute -left-16 top-28 h-40 w-40 rounded-full bg-emerald/[0.12] blur-3xl" />
             <div className="relative flex h-full flex-col">
                 <SidebarBrand />
                 {isAdmin ? <AdminNavLinks current={current} /> : <ClientNavLinks current={current} />}
@@ -502,11 +504,11 @@ export function AdminShell({
 
 type Accent = 'emerald' | 'honey' | 'terracotta' | 'cocoa';
 
-const ACCENT_STYLES: Record<Accent, { chip: string; bar: string; glow: string }> = {
-    emerald: { chip: 'bg-emerald/10 text-emerald', bar: 'from-emerald to-emerald/40', glow: 'group-hover:shadow-emerald/15' },
-    honey: { chip: 'bg-honey/15 text-honey', bar: 'from-honey to-honey/40', glow: 'group-hover:shadow-honey/20' },
-    terracotta: { chip: 'bg-terracotta/10 text-terracotta', bar: 'from-terracotta to-terracotta/40', glow: 'group-hover:shadow-terracotta/15' },
-    cocoa: { chip: 'bg-cocoa/8 text-cocoa', bar: 'from-cocoa to-cocoa/40', glow: 'group-hover:shadow-cocoa/15' },
+const ACCENT_STYLES: Record<Accent, { chip: string }> = {
+    emerald: { chip: 'bg-emerald/10 text-emerald' },
+    honey: { chip: 'bg-honey/15 text-honey' },
+    terracotta: { chip: 'bg-terracotta/10 text-terracotta' },
+    cocoa: { chip: 'bg-cocoa/8 text-cocoa' },
 };
 
 export function AdminStatCard({
@@ -524,32 +526,30 @@ export function AdminStatCard({
 }) {
     const a = ACCENT_STYLES[accent];
     return (
-        <motion.div
-            whileHover={{ y: -4 }}
-            className={`group relative overflow-hidden rounded-2xl border border-cocoa/[0.07] bg-white/90 p-5 shadow-sm backdrop-blur-sm transition-shadow duration-300 hover:shadow-xl ${a.glow}`}
-        >
-            <span className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${a.bar}`} />
+        <div className="group relative overflow-hidden rounded-2xl border border-cocoa/[0.08] bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cocoa/[0.14] hover:shadow-md">
             <div className="flex items-start justify-between gap-3">
                 <div>
-                    <div className="ivoire-serif text-3xl leading-none text-cocoa">{value}</div>
+                    <div className="ivoire-serif origin-left text-3xl leading-none text-cocoa transition-transform duration-200 group-hover:scale-[1.04]">
+                        {value}
+                    </div>
                     <div className="mt-2 text-sm font-medium text-cocoa/60">{label}</div>
                     {subtitle && <div className="mt-0.5 text-xs text-cocoa/40">{subtitle}</div>}
                 </div>
                 {Icon && (
-                    <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl ${a.chip}`}>
-                        <Icon size={20} />
+                    <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition-colors duration-200 ${a.chip}`}>
+                        <Icon size={19} />
                     </div>
                 )}
             </div>
-        </motion.div>
+        </div>
     );
 }
 
 export function AdminPanel({ title, action, children, className = '' }: { title?: string; action?: ReactNode; children: ReactNode; className?: string }) {
     return (
-        <div className={`overflow-hidden rounded-2xl border border-cocoa/[0.07] bg-white/90 shadow-sm backdrop-blur-sm ${className}`}>
+        <div className={`overflow-hidden rounded-2xl border border-cocoa/[0.08] bg-white shadow-sm ${className}`}>
             {(title || action) && (
-                <div className="flex items-center justify-between border-b border-cocoa/[0.06] bg-gradient-to-r from-sand/40 to-transparent px-5 py-4 sm:px-6">
+                <div className="flex items-center justify-between border-b border-cocoa/[0.06] px-5 py-4 sm:px-6">
                     {title && <h3 className="ivoire-serif text-lg text-cocoa">{title}</h3>}
                     {action}
                 </div>
